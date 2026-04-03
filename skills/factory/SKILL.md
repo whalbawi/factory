@@ -364,8 +364,12 @@ the team lead that the PR is ready for merge.
 
 It is the responsibility of the team lead to merge outstanding PRs. The team lead
 MUST come up with an ordering that aims to minimize merge conflicts. The only
-allowed merge strategy is "rebase+merge". Once a PR is merged, notify the agent
-to clean up its worktree.
+allowed merge strategy is "rebase+merge". Once a PR is merged, the merging agent
+MUST clean up immediately:
+
+1. Delete the remote branch: `git push origin --delete <branch-name>`
+2. Remove the local worktree: `git worktree remove <worktree-path>`
+3. Delete the local branch: `git branch -D <branch-name>`
 
 ### Mandatory Retro After Build
 
