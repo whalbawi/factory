@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-root="$1"
+root="${1:-.}"
 error_count=0
 
 # Strip code blocks from a file and output only prose lines

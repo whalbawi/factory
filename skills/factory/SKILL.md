@@ -337,6 +337,26 @@ proceed. Do not guess or silently fix things.
 If output files referenced in state have been deleted from disk, detect
 this and offer to re-run the phase that produced them.
 
+## Anti-Patterns
+
+- **Executing phase logic inline.** The orchestrator sequences phases —
+  it does not implement them. If you find yourself writing test assertions,
+  generating spec content, or scaffolding infrastructure, stop and invoke
+  the appropriate sub-skill instead.
+- **Advancing past failed phases.** If a sub-skill fails or the user
+  rejects its output, stay on that phase. Do not record it as completed
+  and move on.
+- **Skipping output verification.** Before advancing to the next phase,
+  confirm that the completing phase produced its declared output files.
+  A phase that ran but produced no outputs is not complete.
+- **Overwriting existing artifacts without warning.** When artifacts from
+  a prior run exist on disk, always ask the user before re-running a
+  phase that would regenerate them.
+- **Dumping full file contents at transitions.** Present 2-3 sentence
+  summaries at phase boundaries. The user can read full files themselves.
+- **Silently resetting downstream phases.** When the user navigates
+  backward, always warn which phases will be reset before proceeding.
+
 ## Design Principles
 
 - **Orchestrate, don't execute.** Guide the user to sub-skills. Do not

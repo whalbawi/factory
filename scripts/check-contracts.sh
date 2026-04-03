@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-root="$1"
+root="${1:-.}"
 errors=0
 warnings=0
 

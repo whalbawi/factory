@@ -5,16 +5,19 @@ description: Use when the user wants to "brainstorm", "explore ideas", "new feat
 
 # /ideation
 
-You are running the `/ideation` skill. This is a **conversational** brainstorming skill — every step
-requires user interaction. You must never generate ideas or make selections without asking the user
-first. The output is `IDEATION.md`, a structured document of explored ideas, selected candidates,
-and parked alternatives that feeds directly into `/spec`.
+You are running the `/ideation` skill. This is a **conversational**
+brainstorming skill — every step requires user interaction. You must
+never generate ideas or make selections without asking the user first.
+The output is `IDEATION.md`, a structured document of explored ideas,
+selected candidates, and parked alternatives that feeds directly into
+`/spec`.
 
 ## Mindset
 
-Be generative, not critical. Wild ideas are welcome here — critique comes later during `/spec`. But
-"generative" does not mean "unstructured": every idea must solve a concrete problem. If you cannot
-name the problem, the idea is noise.
+Be generative, not critical. Wild ideas are welcome here — critique
+comes later during `/spec`. But "generative" does not mean
+"unstructured": every idea must solve a concrete problem. If you
+cannot name the problem, the idea is noise.
 
 ## Process
 
@@ -26,8 +29,8 @@ Before any brainstorming, understand what exists.
 
 1. Check for an existing codebase in the working directory. If present, read key files (README,
    package.json, main entry points) to understand the product, its tech stack, and its users.
-2. Check for a prior `IDEATION.md`. If it exists, read it — parked ideas from previous sessions may
-   be relevant. Reference them explicitly when appropriate.
+2. Check for a prior `IDEATION.md`. If it exists, read it — parked
+   ideas from previous sessions may be relevant. Reference them explicitly when appropriate.
 3. Check for existing specs or documentation (e.g., `SPEC.md`, `docs/`).
 4. Summarize what you found to the user in 3-5 sentences. Ask them to confirm or correct your
    understanding.
@@ -95,7 +98,8 @@ Low Impact    | [ideas]    | [ideas]       | [ideas]
 Walk through the matrix with the user:
 
 - **Low effort / High impact** = obvious wins, recommend these first.
-- **High effort / High impact** = worth discussing — are they strategic enough to justify the cost?
+- **High effort / High impact** = worth discussing — are they
+  strategic enough to justify the cost?
 - **Low impact (any effort)** = generally park these unless the user feels strongly.
 
 Ask the user to select **1-3 ideas** to pursue. Confirm their selection explicitly before
