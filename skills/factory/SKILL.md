@@ -399,6 +399,7 @@ is presented to the user.
 **High confidence** — multiple corroborating signals. Present as fact.
 
 Examples:
+
 - `npm test` in both `package.json` scripts AND `.github/workflows/ci.yml`
   -> "Test command: `npm test`"
 - `jest.config.ts` + jest in devDependencies + test files use
@@ -409,6 +410,7 @@ Examples:
 **Medium confidence** — single authoritative signal. Present with caveat.
 
 Examples:
+
 - `npm test` in `package.json` but no CI config found
   -> "Test command appears to be `npm test` (from package.json; no CI
   found to confirm)"
@@ -420,6 +422,7 @@ Examples:
 **Low confidence** — indirect or ambiguous signal. Present as a question.
 
 Examples:
+
 - `.env.example` exists but no `dotenv` in dependencies and no env
   loading code -> "I see .env.example but no dotenv usage. Do you use
   environment variables?"
@@ -447,6 +450,7 @@ needed.
 | deploy | `DEPLOY-RECEIPT.md` + app accessible | `DEPLOY-RECEIPT.md` but status unknown |
 
 Rules:
+
 - Only mark `completed` with high-confidence findings.
 - Medium-confidence findings -> `partial`.
 - Low-confidence findings -> leave as `pending`.
@@ -489,6 +493,7 @@ I've analyzed your codebase. Here's what I found:
 ```
 
 Rules:
+
 - High-confidence findings: stated as facts, no hedging.
 - Medium-confidence findings: stated with caveats.
 - Low-confidence findings: stated as questions to the user.
@@ -563,6 +568,7 @@ touch CLAUDE.md. If "Y", apply changes.
 ```
 
 Content rules:
+
 - Every section must have concrete values, not placeholders. If unknown,
   omit the section.
 - Commands must be verified against the package manifest or CI config.
