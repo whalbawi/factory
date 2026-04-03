@@ -25,7 +25,7 @@ and the install friction is too high for casual adoption.
 |------|----------|---------|
 | `index.html` | `site/index.html` | Landing page (GitHub Pages root) |
 | `plugin.json` | `.claude-plugin/plugin.json` | Plugin manifest |
-| `marketplace.json` | `marketplace.json` | Custom marketplace index |
+| `marketplace.json` | `.claude-plugin/marketplace.json` | Custom marketplace index |
 
 ## Landing Page
 
@@ -102,7 +102,7 @@ The page has exactly four sections, in order:
       <p class="pitch">Idea to production in one pipeline.</p>
       <div class="install-quick">
         <pre><code>/plugin marketplace add whalbawi/factory
-/plugin install factory</code></pre>
+/plugin install factory@factory-marketplace</code></pre>
       </div>
       <a href="https://github.com/whalbawi/factory" class="gh-link">View on GitHub</a>
     </section>
@@ -118,7 +118,7 @@ The page has exactly four sections, in order:
       <div class="method">
         <h3>Plugin (recommended)</h3>
         <pre><code>/plugin marketplace add whalbawi/factory
-/plugin install factory</code></pre>
+/plugin install factory@factory-marketplace</code></pre>
       </div>
       <div class="method">
         <h3>Manual</h3>
@@ -222,49 +222,48 @@ document.querySelectorAll('pre').forEach(pre => {
 
 ### `.claude-plugin/plugin.json`
 
+The plugin manifest. The `skills` field points to the directory containing
+skill subdirectories. Claude Code auto-discovers `SKILL.md` files within
+each subdirectory. Skills are namespaced by plugin name — users invoke
+them as `/factory:ideation`, `/factory:spec`, etc.
+
 ```json
 {
   "name": "factory",
   "version": "0.1.0",
   "description": "A pipeline of Claude Code skills that takes software products from idea to production.",
-  "author": "whalbawi",
+  "author": {
+    "name": "whalbawi"
+  },
   "homepage": "https://whalbawi.github.io/factory",
   "repository": "https://github.com/whalbawi/factory",
   "license": "MIT",
-  "skills": [
-    { "name": "factory",   "path": "skills/factory/SKILL.md" },
-    { "name": "ideation",  "path": "skills/ideation/SKILL.md" },
-    { "name": "spec",      "path": "skills/spec/SKILL.md" },
-    { "name": "prototype", "path": "skills/prototype/SKILL.md" },
-    { "name": "setup",     "path": "skills/setup/SKILL.md" },
-    { "name": "build",     "path": "skills/build/SKILL.md" },
-    { "name": "retro",     "path": "skills/retro/SKILL.md" },
-    { "name": "qa",        "path": "skills/qa/SKILL.md" },
-    { "name": "security",  "path": "skills/security/SKILL.md" },
-    { "name": "deploy",    "path": "skills/deploy/SKILL.md" }
-  ],
-  "install": {
-    "type": "skills",
-    "target": "global"
-  }
+  "skills": "./skills/"
 }
 ```
 
-### `marketplace.json`
+### `.claude-plugin/marketplace.json`
 
-This file lives at the repo root and serves as the custom marketplace index. When a user
-runs `/plugin marketplace add whalbawi/factory`, Claude Code fetches this file from the
-repo's default branch.
+The custom marketplace index. This file must be at
+`.claude-plugin/marketplace.json` in the repo root. When a user runs
+`/plugin marketplace add whalbawi/factory`, Claude Code clones the repo
+and reads this file.
+
+The marketplace `name` field is used in install commands:
+`/plugin install factory@factory-marketplace`.
 
 ```json
 {
-  "name": "Factory Marketplace",
+  "name": "factory-marketplace",
+  "owner": {
+    "name": "whalbawi"
+  },
   "plugins": [
     {
       "name": "factory",
-      "version": "0.1.0",
+      "source": "./",
       "description": "Idea to production in one pipeline. 10 Claude Code skills for the full development lifecycle.",
-      "manifest": ".claude-plugin/plugin.json"
+      "version": "0.1.0"
     }
   ]
 }
@@ -314,9 +313,9 @@ Jekyll processing.
 - [ ] `.claude-plugin/plugin.json` exists with valid JSON
 - [ ] All 10 skills are listed in the manifest
 - [ ] Skill paths in the manifest match actual file locations in the repo
-- [ ] `marketplace.json` exists at the repo root with valid JSON
-- [ ] `/plugin marketplace add whalbawi/factory` succeeds (once Claude Code supports it)
-- [ ] `/plugin install factory` installs all 10 skills
+- [ ] `.claude-plugin/marketplace.json` exists with valid JSON
+- [ ] `/plugin marketplace add whalbawi/factory` succeeds
+- [ ] `/plugin install factory@factory-marketplace` installs all 10 skills
 
 ## Architect Review
 
@@ -347,10 +346,12 @@ Jekyll processing.
 
 ### Open Questions
 
-1. **Plugin system schema.** Claude Code's plugin/marketplace system may not be finalized.
-   The `plugin.json` and `marketplace.json` schemas in this spec are best guesses. They
-   will need to be validated against the actual plugin system once it ships, and updated
-   if the schema differs.
+1. **Plugin system schema validated.** The `plugin.json` and `marketplace.json` schemas
+   have been verified against Claude Code's plugin documentation. The `skills` field
+   points to a directory (not individual files), skills are namespaced by plugin name
+   (e.g., `/factory:ideation`), and `marketplace.json` lives at
+   `.claude-plugin/marketplace.json`. Install requires the marketplace name:
+   `/plugin install factory@factory-marketplace`.
 
 2. **GitHub Pages base path.** When GitHub Pages serves from a project repo (not
    `username.github.io`), assets are served under `/factory/`. The single-file design
