@@ -1,13 +1,17 @@
 # Global Reference — Shared Skill Conventions
 
 This file contains conventions shared across multiple Factory skills. Each
-skill's `SKILL.md` defines which sections apply and provides parameter values
-for any placeholders. Do not read this file standalone — read it from a skill
-that references it.
+skill's `SKILL.md` references the sections that apply and provides parameter
+values for any placeholders.
+
+Sections marked **[MANDATORY]** apply to every skill unconditionally. Skills
+do not need to opt into them — they are enforced by default. All other
+sections are opt-in: a skill follows them only when its `SKILL.md`
+explicitly references them.
 
 ---
 
-## Settings Protocol
+## Settings Protocol [MANDATORY]
 
 Before starting, read `.factory/settings.json` and resolve this skill's
 settings against the declared schema in the `## Settings` section of this
@@ -16,7 +20,7 @@ for any setting with no default and no stored value.
 
 ---
 
-## State Tracking
+## State Tracking [MANDATORY]
 
 Update `.factory/state.json` on invocation and completion. If no state file
 or `.factory/` directory exists, create them. Read the existing file, merge
@@ -89,7 +93,51 @@ halt and inform the user that the gate skill must be re-run.
 
 ---
 
-## Secrets Handling
+## CLAUDE.md Drift Sync [MANDATORY]
+
+After resolving settings but before executing main logic, check whether
+the project-level `CLAUDE.md` has drifted from the canonical content that
+Factory owns. Factory-owned content is any block delimited by
+`<!-- factory:*:start -->` / `<!-- factory:*:end -->` marker pairs (e.g.,
+`factory:process-rules`, or any future marker namespace).
+
+### Detection
+
+1. Read `CLAUDE.md` in the project root. If it does not exist or contains
+   no Factory marker pairs, skip this check.
+2. For each marker pair found, extract the content between the start and
+   end markers.
+3. Compare each extracted block against the corresponding canonical
+   template from the `/genesis` skill file. Ignore leading/trailing
+   whitespace when comparing. If all blocks match, no action is needed.
+
+### Update
+
+If any block has drifted, gate on the `genesis.update_project_claude_md`
+setting:
+
+- **`prompt`** (default): Show a short diff summary (sections
+  added/removed/changed) and ask the user to confirm before updating.
+- **`auto`**: Replace the stale blocks with the current canonical
+  content silently.
+- **`skip`**: Do nothing. Leave the stale content in place.
+
+When updating, replace everything between each drifted start and end
+marker (inclusive of the markers themselves) with the current canonical
+content wrapped in fresh markers. Preserve all content outside Factory
+markers.
+
+### Constraints
+
+- This check runs at most once per skill invocation. Do not re-check
+  after updating.
+- Do not create `CLAUDE.md` if it does not exist -- that is `/genesis`'s
+  responsibility.
+- Do not modify content outside Factory markers.
+
+---
+
+## Secrets Handling [MANDATORY]
 
 Verify secrets exist but never echo or log their values. Use name-only
 listing commands (e.g., `fly secrets list`), not value-revealing commands

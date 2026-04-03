@@ -25,13 +25,10 @@ Follow these 6 steps in order. Do not skip or combine steps.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `ideation`
 - `{OUTPUT_FILES}` = `["IDEATION.md"]`
-
-Read and follow the **Settings Protocol** and **State Tracking** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### Step 1: Context Gathering
 

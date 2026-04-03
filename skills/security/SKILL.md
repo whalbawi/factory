@@ -45,14 +45,10 @@ output rather than skipping it.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `security`
 - `{OUTPUT_FILES}` = `["SECURITY.md"]`
-
-Read and follow the **Settings Protocol**, **State Tracking**, and
-**Secrets Handling** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### Step 1: Dependency Audit
 

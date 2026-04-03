@@ -85,17 +85,18 @@ In `skills/spec/SKILL.md`, change the CLAUDE.md generation instructions:
 <!-- spec:project:end -->
 ```
 
-### 5. Respect the `claim_write_claude_md` setting
+### 5. Respect the `update_project_claude_md` setting
 
-The existing global setting `claim_write_claude_md` (enum: prompt/auto/skip)
-controls behavior during `/genesis claim`. This setting applies to the
-Factory-owned sections only. `/spec` always writes its sections when it runs.
+The setting `update_project_claude_md` (enum: prompt/auto/skip) controls
+how Factory-owned sections are written and kept in sync. This applies during
+`/genesis claim`, bootstrap mode, and the drift-sync check that every skill
+runs on entry. `/spec` always writes its sections when it runs.
 
 ## Acceptance Criteria
 
 - [ ] `/genesis` generates CLAUDE.md with process rules in bootstrap mode
 - [ ] `/genesis claim` updates existing CLAUDE.md with process rules,
-      respecting the `claim_write_claude_md` setting
+      respecting the `update_project_claude_md` setting
 - [ ] `/spec` appends project-specific sections without overwriting process
       rules
 - [ ] Standalone `/spec` (no prior `/genesis` run) still generates the full

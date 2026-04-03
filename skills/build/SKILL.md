@@ -73,13 +73,12 @@ Branch naming follows `feat/{task-description}` or `fix/{fix-description}`.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `build`
 - `{OUTPUT_FILES}` = `["PROGRESS.md", "src/", "tests/"]`
 
-Read and follow the **Settings Protocol**, **State Tracking**, and
-**Post-Merge Cleanup** sections in
+Also read and follow the **Post-Merge Cleanup** section in
 [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### Phase 1: Task Decomposition

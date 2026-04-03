@@ -58,13 +58,10 @@ pass.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `qa`
 - `{OUTPUT_FILES}` = `["QA-REPORT.md"]`
-
-Read and follow the **Settings Protocol** and **State Tracking** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 **Additional state fields for this skill:**
 
