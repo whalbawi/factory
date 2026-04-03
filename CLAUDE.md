@@ -162,21 +162,23 @@ Factory is deployed as a tagged release with a GitHub Pages landing page.
 
 #### Release Flow
 
-1. Verify gates: `/qa` and `/security` must both pass at current HEAD.
-2. Bump `version` in `.claude-plugin/plugin.json` to the new version.
-3. Update `ref` in `.claude-plugin/marketplace.json` to the new tag name
-   (e.g., `v0.2.0`). The tag does not exist yet — it is created in step 6.
-   Do not add a `version` field to marketplace.json — the version in
-   plugin.json is authoritative.
-4. Commit the version bump via PR. Merge to main.
-5. Verify CI passes on the merge commit.
-6. Tag the merge commit: `git tag vX.Y.Z`.
-7. Push the tag: `git push origin vX.Y.Z`.
-8. Write a deployment receipt to `deployments/DEPLOY-RECEIPT-{ISO-datetime}.md`.
-9. Commit and push the receipt via PR.
+Tag first, update marketplace second. This eliminates the race window where
+marketplace.json references a tag that does not yet exist.
 
-The tag is created after the commit that references it. This works because
-users install from published tags, not from the commit that updated the ref.
+1. Verify gates: `/qa` and `/security` must both pass at current HEAD.
+2. Tag the current HEAD: `git tag vX.Y.Z`.
+3. Push the tag: `git push origin vX.Y.Z`.
+4. Bump `version` in `.claude-plugin/plugin.json` to the new version.
+5. Update `ref` in `.claude-plugin/marketplace.json` to the new tag name.
+   Do not add a `version` field to marketplace.json — the version in
+   plugin.json is authoritative for caching and update detection.
+6. Commit the version bump via PR. Merge to main.
+7. Write a deployment receipt to `deployments/DEPLOY-RECEIPT-{ISO-datetime}.md`.
+8. Commit and push the receipt via PR.
+
+The tag captures the actual product code. The marketplace update (steps 4-6)
+is a pointer change that makes the new version discoverable. Users installing
+between steps 3 and 6 still get the previous version safely.
 
 #### Environments
 
