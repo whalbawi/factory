@@ -550,9 +550,11 @@ logical groups that share conventions and interfaces:
   | `/deploy` | `specs/SPEC-deploy.md` |
   | `/factory` | `specs/SPEC-orchestration.md` |
   | `/factory claim` | `specs/SPEC-claim.md` |
+  | `/factory settings` | `specs/SPEC-settings.md` |
+  | `/spec` | `specs/SPEC-spec.md` |
+  | `/monitor` (v1.1) | `specs/SPEC-monitor.md` |
 
-  The old `SPEC-core-skills.md` is replaced by a slim index file (`specs/INDEX.md`) that
-  links to individual spec files.
+  See `specs/INDEX.md` for a navigable index of all domain specs.
 
 ### Interface Contracts
 
