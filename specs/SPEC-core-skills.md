@@ -16,6 +16,7 @@ skills.
 
 | Skill | Spec file |
 |-------|-----------|
+| `/spec` | [SPEC-spec.md](SPEC-spec.md) (external skill — Factory wraps, does not fork) |
 | `/ideation` | [SPEC-ideation.md](SPEC-ideation.md) |
 | `/prototype` | [SPEC-prototype.md](SPEC-prototype.md) |
 | `/setup` | [SPEC-setup.md](SPEC-setup.md) |
@@ -39,7 +40,7 @@ skills.
 
 Every skill follows the same structure, derived from the `/spec` reference:
 
-```
+```text
 ---
 name: <skill-name>
 description: <trigger patterns — when this skill activates>
@@ -227,7 +228,7 @@ principles:
 
 Every phase transition follows this pattern:
 
-```
+```text
 1. Skill completes and presents its output
 2. Summary of what was produced (2-3 sentences, not a dump)
 3. Key decisions or findings highlighted

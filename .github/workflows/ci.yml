@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run markdownlint
+        uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          globs: "**/*.md"
+
+  frontmatter:
+    name: Frontmatter Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate YAML frontmatter
+        run: |
+          chmod +x scripts/validate-frontmatter.sh
+          find . -name "SKILL.md" -print0 | xargs -0 bash scripts/validate-frontmatter.sh
+
+  cross-references:
+    name: Cross-Reference Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check cross-references
+        run: |
+          chmod +x scripts/check-crossrefs.sh
+          bash scripts/check-crossrefs.sh .
+
+  contracts:
+    name: Contract Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check contract consistency
+        run: |
+          chmod +x scripts/check-contracts.sh
+          bash scripts/check-contracts.sh .

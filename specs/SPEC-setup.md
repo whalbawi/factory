@@ -343,7 +343,7 @@ instructions for each environment.
 
 The environments form a linear promotion pipeline:
 
-```
+```text
 alpha  →  staging  →  prod
        /qa passes   /security clears + user confirms
 ```

@@ -13,7 +13,7 @@ backward navigation, and resumption after interruption.
 The orchestrator models the pipeline as a state machine with forward progression and backward
 navigation:
 
-```
+```text
 idle -> ideation -> spec -> prototype -> setup -> build -> retro -> qa -> security -> deploy
   -> complete
          ^          ^        ^           ^        ^        ^        ^        ^
@@ -148,7 +148,7 @@ When the user selects "Go back to [phase]":
 
 5. The user is warned before the jump is executed:
 
-   ```
+   ```text
    Going back to spec will mark prototype, setup, build, retro, and qa as pending.
    Their output files will be preserved but may need to be regenerated.
    Proceed? [Y/n]
@@ -304,7 +304,7 @@ description: Use when the user wants to "build a product", "start a project",
 
 ### Pipeline UX Flow
 
-```
+```text
 Welcome to Factory.
 
 [If resuming]
@@ -371,7 +371,7 @@ Summaries only.
 
 When the user seems confused about what Factory does or where they are:
 
-```
+```text
 Factory guides you from idea to deployed product through these phases:
 
   /ideation  → Brainstorm and explore ideas

@@ -27,7 +27,7 @@ procedural steps silently.
 
 `/retro` is **mandatory** after `/build` in the v1 pipeline. The full v1 pipeline is:
 
-```
+```text
 /ideation -> /spec -> /prototype -> /setup -> /build -> /retro -> /qa -> /security -> /deploy
 ```
 
