@@ -46,7 +46,7 @@ explicit note that alternatives were considered but unnecessary.
 
 For each alternative, create a directory under `prototypes/`:
 
-```
+```text
 prototypes/
   option-a-cli/
     README.md

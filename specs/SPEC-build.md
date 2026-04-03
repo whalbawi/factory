@@ -56,7 +56,7 @@ project's domain decomposition and the agent assignment matrix from the spec.
 
 Each agent works in an isolated git worktree named:
 
-```
+```text
 {project}-wt-{agent-prefix}-{task}
 ```
 
@@ -270,7 +270,7 @@ questions — DM the relevant agent directly.
 Examples:
 
 - BE -> FE: "The `/api/users` endpoint now returns `{ users: User[], cursor: string }`.
-  Updated the type in `specs/SPEC-api.md`."
+  Updated the type in the domain spec."
 - FE -> PD: "The modal component is ready for review. Can you check the interaction
   flow?"
 - QA -> BE: "The `createOrder` function throws on empty cart but the test expects a
