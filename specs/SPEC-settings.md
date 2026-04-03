@@ -93,25 +93,27 @@ name-value pairs.
 ```json
 {
   "global": {
-    "open_markdown": "Y",
-    "confirm_destructive": true
+    "open_report": true,
+    "auto_commit_outputs": false,
+    "confirm_phase_transition": true,
+    "parallel_domain_agents": 3,
+    "state_file_path": ".factory/state.json"
   },
-  "qa": {
-    "coverage_target": 80,
-    "mutation_testing": false,
-    "open_report": "Y"
-  },
-  "deploy": {
-    "default_environment": "staging",
-    "auto_archive_receipts": true
+  "ideation": {
+    "idea_count": 7,
+    "max_selected_ideas": 3
   },
   "build": {
     "max_parallel_agents": 4,
-    "ci_check_interval": 5
+    "ci_inspection_interval": 5,
+    "progress_tracking": "full"
   },
-  "security": {
-    "severity_threshold": "high",
-    "auto_fix": false
+  "qa": {
+    "write_missing_tests": true,
+    "edge_case_hunting": "full"
+  },
+  "deploy": {
+    "auto_archive_receipts": true
   }
 }
 ```
@@ -166,8 +168,8 @@ For each declared setting, resolve its effective value using this precedence ord
 Validation runs on the stored value before it is used:
 
 - If the stored value does not match the declared type, log a warning:
-  `Setting qa.coverage_target has invalid value "abc" (expected number), using
-  default 80`
+  `Setting build.max_parallel_agents has invalid value "abc" (expected number),
+  using default 4`
 - Replace the invalid value with the default. If there is no default, trigger
   first-run discovery.
 - Do NOT silently write the corrected value back to the file. The user may have a
@@ -181,10 +183,10 @@ special string `"ask"`):
 1. Present the setting to the user with its description and available options:
 
    ```text
-   Setting: coverage_target
-   Description: Minimum test coverage percentage
-   Type: number (0-100)
-   Value: [enter a number]
+   Setting: discovery_track
+   Description: Controls discovery depth in /spec
+   Type: enum (auto, full, focused, fast)
+   Value: [choose one]
    ```
 
 2. Validate the user's input against the schema.
@@ -225,38 +227,52 @@ Example output:
 ```text
 === Global Settings ===
 
-  global.open_markdown        = Y         (default: ask)
-    Open markdown files in browser after creation
+  global.open_report              = true      (default: false)
+    Open generated report files in the default editor after creation
 
-  global.confirm_destructive  = true      (default: true)
-    Ask for confirmation before destructive operations
+  global.auto_commit_outputs      = (default) (default: false)
+    Automatically git-commit skill output files after completion
 
-=== /qa Settings ===
+  global.confirm_phase_transition = true      (default: true)
+    Require explicit user confirmation before advancing phases
 
-  qa.coverage_target          = 80        (default: 100)
-    Minimum test coverage percentage
+  global.parallel_domain_agents   = 3         (default: 3)
+    Maximum concurrent domain-scoped sub-agents
 
-  qa.mutation_testing         = (default) (default: false)
-    Run mutation testing when supported by the stack
+  global.state_file_path          = (default) (default: ".factory/state.json")
+    Path to pipeline state file relative to project root
 
-  qa.open_report              = Y         (default: ask)
-    Open QA report in browser after creation
+=== /ideation Settings ===
 
-=== /deploy Settings ===
+  ideation.idea_count             = 7         (default: 7)
+    Target number of feature ideas to generate
 
-  deploy.default_environment  = staging   (default: prod)
-    Default target environment when none specified
-
-  deploy.auto_archive_receipts = true     (default: true)
-    Automatically archive previous DEPLOY-RECEIPT.md files
+  ideation.max_selected_ideas     = (default) (default: 3)
+    Maximum ideas the user can select for deep dive
 
 === /build Settings ===
 
-  build.max_parallel_agents   = 4         (default: 3)
+  build.max_parallel_agents       = 4         (default: 4)
     Maximum number of parallel specialist agents
 
-  build.ci_check_interval     = 5         (default: 5)
-    Number of merges between CI inspection runs
+  build.ci_inspection_interval    = 5         (default: 5)
+    Number of PRs merged between CI pipeline inspections
+
+  build.progress_tracking         = (default) (default: "full")
+    Level of progress file tracking (full or rollup_only)
+
+=== /qa Settings ===
+
+  qa.write_missing_tests          = true      (default: true)
+    Automatically write tests for uncovered acceptance criteria
+
+  qa.edge_case_hunting            = (default) (default: "full")
+    Depth of edge case hunting (full, light, skip)
+
+=== /deploy Settings ===
+
+  deploy.auto_archive_receipts    = true      (default: true)
+    Automatically archive previous DEPLOY-RECEIPT.md files
 ```
 
 If no settings file exists and no skills declare settings, say:
@@ -267,15 +283,15 @@ If no settings file exists and no skills declare settings, say:
 Retrieve a single setting value. The key uses dot notation: `skill.setting_name`.
 
 ```text
-> /factory settings get qa.coverage_target
-qa.coverage_target = 80
+> /factory settings get build.max_parallel_agents
+build.max_parallel_agents = 4
 ```
 
 If the setting is unset and has a default:
 
 ```text
-> /factory settings get qa.mutation_testing
-qa.mutation_testing = false (default)
+> /factory settings get qa.edge_case_hunting
+qa.edge_case_hunting = full (default)
 ```
 
 If the key does not match any declared setting:
@@ -291,17 +307,17 @@ available settings.
 Set a setting value. Validates the value against the skill's schema before writing.
 
 ```text
-> /factory settings set qa.coverage_target 80
-Set qa.coverage_target = 80
+> /factory settings set build.max_parallel_agents 6
+Set build.max_parallel_agents = 6
 
-> /factory settings set qa.coverage_target abc
-Error: qa.coverage_target expects a number, got "abc"
+> /factory settings set build.max_parallel_agents abc
+Error: build.max_parallel_agents expects a number, got "abc"
 
-> /factory settings set qa.coverage_target 150
-Error: qa.coverage_target must be between 0 and 100, got 150
+> /factory settings set build.max_parallel_agents 12
+Error: build.max_parallel_agents must be between 1 and 8, got 12
 
-> /factory settings set deploy.default_environment alpha
-Set deploy.default_environment = alpha
+> /factory settings set qa.edge_case_hunting light
+Set qa.edge_case_hunting = light
 ```
 
 The set operation:
@@ -319,11 +335,11 @@ Remove a setting from `.factory/settings.json`, reverting it to its default (or 
 setting.
 
 ```text
-> /factory settings reset qa.coverage_target
-Reset qa.coverage_target (will use default: 100)
+> /factory settings reset build.max_parallel_agents
+Reset build.max_parallel_agents (will use default: 4)
 
-> /factory settings reset qa.open_report
-Reset qa.open_report (will prompt on next /qa run)
+> /factory settings reset global.open_report
+Reset global.open_report (will use default: false)
 ```
 
 ---
@@ -338,19 +354,42 @@ SKILL.md (since `/factory` is the only skill that governs cross-cutting behavior
 
 Any skill can read global settings. Only the `/factory` skill declares them.
 
-Example global settings:
+The five global settings:
 
 ```yaml
 settings:
-  - name: open_markdown
-    type: enum
-    values: ["Y", "N", "ask"]
-    default: "ask"
-    description: Open generated markdown files in the browser after creation
-  - name: confirm_destructive
+  - name: open_report
+    type: boolean
+    default: false
+    description: >
+      Open generated report files (QA-REPORT.md, SECURITY.md, RETRO-{date}.md,
+      DEPLOY-RECEIPT.md) in the default editor or browser after creation
+  - name: auto_commit_outputs
+    type: boolean
+    default: false
+    description: >
+      Automatically git-commit skill output files (reports, receipts, decision
+      docs) after a skill completes successfully
+  - name: confirm_phase_transition
     type: boolean
     default: true
-    description: Ask for confirmation before destructive operations like phase resets
+    description: >
+      Require explicit user confirmation before advancing to the next pipeline
+      phase. When false, the orchestrator auto-advances after verifying outputs
+  - name: parallel_domain_agents
+    type: number
+    default: 3
+    min: 1
+    max: 8
+    description: >
+      Maximum number of domain-scoped sub-agents to run concurrently during
+      skills that support per-domain parallelism
+  - name: state_file_path
+    type: string
+    default: ".factory/state.json"
+    description: >
+      Path to the pipeline state file relative to the project root. All skills
+      read and write this file for state tracking
 ```
 
 ### Per-Skill Settings
@@ -362,14 +401,13 @@ declares and owns its own settings. No skill may write to another skill's namesp
 
 When a skill reads a setting, it checks its own namespace first. If it also needs a
 global setting, it reads from the `global` namespace explicitly. There is no
-inheritance or fallback between namespaces -- a skill that wants `open_markdown`
-behavior must explicitly read `global.open_markdown`.
+inheritance or fallback between namespaces -- a skill that wants `open_report`
+behavior must explicitly read `global.open_report`.
 
 ### Conflict Rules
 
-- A per-skill setting and a global setting may have the same `name` field (e.g.,
-  both `global.open_markdown` and `qa.open_report` can coexist). They are fully
-  independent because namespacing disambiguates them.
+- A per-skill setting and a global setting may have the same `name` field. They
+  are fully independent because namespacing disambiguates them.
 - If two skills somehow declare a setting with the same fully-qualified key (which
   would require two skills with the same name), the first-loaded skill wins and a
   warning is logged. This should not happen in practice because skill names are
@@ -379,56 +417,141 @@ behavior must explicitly read `global.open_markdown`.
 
 ## Concrete Examples: Settings Declarations for Factory Skills
 
-### /factory (orchestrator) -- Global Settings
+These are the actual settings from the reviewed inventory. 5 global + 17 per-skill.
+
+### /factory (orchestrator) -- Global + Per-Skill Settings
+
+Global settings (declared by `/factory`, readable by all skills):
 
 ```yaml
 settings:
-  - name: open_markdown
-    type: enum
-    values: ["Y", "N", "ask"]
-    default: "ask"
-    description: Open generated markdown files in the browser after creation
-  - name: confirm_destructive
-    type: boolean
-    default: true
-    description: Ask for confirmation before destructive operations like phase resets
-```
-
-### /qa -- Quality Control Settings
-
-```yaml
-settings:
-  - name: coverage_target
-    type: number
-    min: 0
-    max: 100
-    default: 100
-    description: Minimum test coverage percentage
-  - name: mutation_testing
+  - name: open_report
     type: boolean
     default: false
-    description: Run mutation testing when supported by the stack
-  - name: open_report
-    type: enum
-    values: ["Y", "N", "ask"]
-    default: "ask"
-    description: Open QA report in browser after creation
+    description: >
+      Open generated report files (QA-REPORT.md, SECURITY.md, RETRO-{date}.md,
+      DEPLOY-RECEIPT.md) in the default editor or browser after creation
+  - name: auto_commit_outputs
+    type: boolean
+    default: false
+    description: >
+      Automatically git-commit skill output files (reports, receipts, decision
+      docs) after a skill completes successfully
+  - name: confirm_phase_transition
+    type: boolean
+    default: true
+    description: >
+      Require explicit user confirmation before advancing to the next pipeline
+      phase. When false, the orchestrator auto-advances after verifying outputs
+  - name: parallel_domain_agents
+    type: number
+    default: 3
+    min: 1
+    max: 8
+    description: >
+      Maximum number of domain-scoped sub-agents to run concurrently during
+      skills that support per-domain parallelism
+  - name: state_file_path
+    type: string
+    default: ".factory/state.json"
+    description: >
+      Path to the pipeline state file relative to the project root. All skills
+      read and write this file for state tracking
 ```
 
-### /deploy -- Deployment Settings
+Per-skill settings for the orchestrator itself:
 
 ```yaml
 settings:
-  - name: default_environment
-    type: enum
-    values: ["alpha", "staging", "prod"]
-    default: "prod"
-    description: Default target environment when none specified
-  - name: auto_archive_receipts
+  - name: auto_detect_artifacts
     type: boolean
     default: true
-    description: Automatically archive previous DEPLOY-RECEIPT.md files
+    description: >
+      On first invocation without a state file, scan for existing artifacts
+      (SPEC.md, package.json, source code) to infer completed phases and
+      suggest a starting point. When false, always start from ideation.
+  - name: preserve_stale_outputs
+    type: boolean
+    default: true
+    description: >
+      When navigating backward in the pipeline, preserve output files from
+      reset phases on disk (marked stale). When false, delete output files
+      from reset phases.
+  - name: claim_write_claude_md
+    type: enum
+    values: ["prompt", "auto", "skip"]
+    default: "prompt"
+    description: >
+      Controls CLAUDE.md behavior during /factory claim. "prompt" asks the
+      user before writing; "auto" writes without confirmation; "skip" never
+      writes CLAUDE.md during claim.
 ```
+
+### /ideation -- Brainstorming Settings
+
+```yaml
+settings:
+  - name: idea_count
+    type: number
+    default: 7
+    min: 3
+    description: >
+      Target number of feature ideas to generate in Step 3 (idea generation).
+      The skill generates between idea_count-2 and idea_count+1 ideas.
+  - name: max_selected_ideas
+    type: number
+    default: 3
+    min: 1
+    description: >
+      Maximum number of ideas the user can select for deep dive in Step 4.
+      Caps scope to keep the ideation session focused.
+```
+
+### /spec -- Discovery Settings
+
+```yaml
+settings:
+  - name: discovery_track
+    type: enum
+    values: ["auto", "full", "focused", "fast"]
+    default: "auto"
+    description: >
+      Controls discovery depth. "auto" lets the skill calibrate based on the
+      user's first message. "full", "focused", and "fast" force a specific
+      track regardless of input signal.
+  - name: peer_review_enabled
+    type: boolean
+    default: true
+    description: >
+      Enable the peer review pass (Phase 2d) where specialist agents read
+      and critique each other's specs. Disabling saves time but reduces
+      cross-domain consistency.
+```
+
+### /prototype -- Prototyping Settings
+
+```yaml
+settings:
+  - name: prototype_count
+    type: number
+    default: 3
+    min: 2
+    max: 4
+    description: >
+      Target number of alternative prototypes to generate. Must be at least 2
+      unless the spec genuinely admits only one approach.
+  - name: auto_run_prototypes
+    type: boolean
+    default: true
+    description: >
+      Automatically execute each prototype to verify it runs before presenting
+      to the user. When false, prototypes are built but not executed.
+```
+
+### /setup
+
+No Factory-usage settings. Deployment platform, environment provisioning, and telemetry
+are project-level decisions that belong in SPEC.md and CLAUDE.md.
 
 ### /build -- Construction Settings
 
@@ -436,35 +559,109 @@ settings:
 settings:
   - name: max_parallel_agents
     type: number
+    default: 4
     min: 1
-    max: 10
-    default: 3
-    description: Maximum number of parallel specialist agents
-  - name: ci_check_interval
+    max: 8
+    description: >
+      Maximum number of specialist agents (BE, FE, OPS, etc.) the Architect
+      may run concurrently. Higher values speed up builds but increase
+      resource usage.
+  - name: ci_inspection_interval
     type: number
-    min: 1
-    max: 20
     default: 5
-    description: Number of merges between CI inspection runs
+    min: 0
+    description: >
+      Number of PRs merged to main between CI pipeline inspections. After
+      this many merges, the OPS agent inspects for false positives and false
+      negatives. Set to 0 to disable periodic inspections.
+  - name: progress_tracking
+    type: enum
+    values: ["full", "rollup_only"]
+    default: "full"
+    description: >
+      "full" requires both per-agent PROGRESS-{PREFIX}.md files and the
+      rolled-up PROGRESS.md. "rollup_only" requires only the Architect's
+      PROGRESS.md, reducing overhead for small projects.
+```
+
+### /retro -- Retrospective Settings
+
+```yaml
+settings:
+  - name: retro_schedule
+    type: enum
+    values: ["after_build", "every_n_merges", "on_demand"]
+    default: "after_build"
+    description: >
+      When retros are triggered in the pipeline. "after_build" runs once
+      after /build completes (mandatory). "every_n_merges" also triggers
+      mid-build retros at the interval set by retro_merge_interval.
+      "on_demand" makes retro purely user-initiated.
+  - name: retro_merge_interval
+    type: number
+    default: 10
+    min: 0
+    description: >
+      Number of PRs merged to main between mid-build retros. Only applies
+      when retro_schedule is "every_n_merges". Set to 0 to disable.
+```
+
+### /qa -- Quality Control Settings
+
+```yaml
+settings:
+  - name: write_missing_tests
+    type: boolean
+    default: true
+    description: >
+      When QA finds acceptance criteria without corresponding tests (Step 3),
+      automatically write the missing tests. When false, QA only reports
+      the gaps without writing tests.
+  - name: edge_case_hunting
+    type: enum
+    values: ["full", "light", "skip"]
+    default: "full"
+    description: >
+      Depth of edge case hunting in Step 4. "full" probes all categories
+      (input validation, concurrency, resource exhaustion, state transitions,
+      external failures). "light" probes input validation and error paths
+      only. "skip" disables edge case hunting (not recommended).
 ```
 
 ### /security -- Security Audit Settings
 
 ```yaml
 settings:
-  - name: severity_threshold
+  - name: history_scan_depth
     type: enum
-    values: ["critical", "high", "medium", "low"]
-    default: "critical"
+    values: ["full", "recent", "current"]
+    default: "full"
     description: >
-      Minimum severity level that blocks deployment. Default blocks only on
-      critical. Set to high to also block on high-severity findings.
-  - name: auto_fix
+      How deeply the secrets management review scans git history. "full"
+      scans all commits for leaked secrets. "recent" scans the last 100
+      commits. "current" scans only the current tree (fastest but misses
+      historically leaked secrets).
+  - name: threat_model_depth
+    type: enum
+    values: ["full", "abbreviated"]
+    default: "full"
+    description: >
+      Depth of the STRIDE threat model in Step 3. "full" enumerates all
+      attack surfaces and threats per domain. "abbreviated" covers only
+      high-risk surfaces (external inputs, auth boundaries, data stores).
+```
+
+### /deploy -- Deployment Settings
+
+```yaml
+settings:
+  - name: auto_archive_receipts
     type: boolean
-    default: false
+    default: true
     description: >
-      Automatically apply safe fixes for dependency vulnerabilities (patch
-      version bumps only)
+      Automatically rename existing DEPLOY-RECEIPT.md to
+      DEPLOY-RECEIPT-{timestamp}.md before writing a new receipt. When
+      false, overwrite the existing receipt without archiving.
 ```
 
 ---
@@ -485,9 +682,9 @@ used in its state entry:
       "status": "in_progress",
       "started_at": "2026-04-03T14:00:00Z",
       "settings_used": {
-        "qa.coverage_target": 80,
-        "qa.mutation_testing": false,
-        "global.open_markdown": "Y"
+        "qa.write_missing_tests": true,
+        "qa.edge_case_hunting": "full",
+        "global.open_report": true
       }
     }
   }
@@ -527,10 +724,11 @@ updated mid-run.
   to the repo. Never store API keys, tokens, passwords, or credentials as settings.
   The system actively refuses values matching common secret patterns.
 
-- **Inventing settings that should be in CLAUDE.md.** Settings are for user
-  preferences that vary between people or projects. Project-level conventions (test
-  commands, tech stack, code style) belong in CLAUDE.md, not in settings. If the value
-  would be the same for every user of the project, it is not a setting.
+- **Inventing settings that should be in CLAUDE.md.** Settings control how Factory
+  behaves, not the target project. Coverage targets, test commands, security severity
+  thresholds, tech stack, and code style belong in CLAUDE.md or SPEC.md, not in
+  settings. If the setting describes the project rather than Factory's behavior, it
+  is not a setting.
 
 - **Using string type when enum is appropriate.** If there are only 3-5 valid values,
   use `enum` for validation. `string` is for genuinely freeform values like custom
@@ -563,9 +761,9 @@ updated mid-run.
 ### Decisions Made
 
 1. **Flat namespace, not nested.** Settings use `skill.setting_name` dot notation with
-   a flat JSON structure. Nested namespaces (e.g., `qa.coverage.target`) were
+   a flat JSON structure. Nested namespaces (e.g., `build.progress.tracking`) were
    considered and rejected -- they add complexity without meaningful benefit for the
-   expected number of settings per skill (2-5).
+   expected number of settings per skill (1-3).
 
 2. **Schema in SKILL.md, not in a separate file.** Settings schemas are declared inline
    in each skill's SKILL.md rather than in a separate `settings.schema.json`. This
@@ -581,8 +779,8 @@ updated mid-run.
    setting churn rate does not justify the complexity.
 
 5. **`settings_used` in state is informational only.** Recording which settings were
-   active during a run aids debugging ("why did QA use 80% coverage last time?") but
-   is not used for gating or validation.
+   active during a run aids debugging ("why did QA use `light` edge case hunting last
+   time?") but is not used for gating or validation.
 
 6. **No environment-specific settings.** Settings do not vary by deployment environment
    (alpha/staging/prod). Environment-specific configuration belongs in deployment
@@ -593,29 +791,27 @@ updated mid-run.
    (AWS keys, GitHub tokens, etc.) but cannot catch all secrets. The anti-pattern
    documentation makes the policy clear; enforcement is advisory, not exhaustive.
 
+8. **Settings control Factory behavior, not the target project.** The scope test is:
+   does this setting change how Factory operates, or does it describe the project being
+   built? Coverage targets, test commands, security severity thresholds, deployment
+   platforms, and tech stack choices belong in CLAUDE.md or SPEC.md. The reviewed
+   inventory (5 global + 17 per-skill) reflects this principle.
+
+9. **`/factory settings` is a subcommand, not a standalone skill.** The orchestrator is
+   always installed in a Factory project, so routing through `/factory` is safe and
+   keeps meta-operations consolidated.
+
+10. **Project-scoped settings only.** Settings live in `.factory/settings.json` in the
+    project directory. User-scoped settings (`~/.factory/settings.json`) deferred to a
+    future version if users request cross-project preferences. Precedence would be:
+    project settings > user settings > schema defaults.
+
+11. **No `null` values.** The `reset` command (key removal) reverts to the default.
+    Storing `null` would be confusing when users hand-edit the file.
+
+12. **`## Settings` section is optional.** Skills without settings (e.g., `/setup`)
+    skip the settings protocol entirely. No empty boilerplate required.
+
 ### Open Questions
 
-1. **Should `/factory settings` require the orchestrator skill to be installed?** The
-   current design routes `settings` through the `/factory` subcommand, which means the
-   orchestrator must be present. An alternative is a standalone `/settings` skill, but
-   this breaks the convention that all meta-operations go through `/factory`.
-   **Recommendation**: Keep it as a `/factory` subcommand. The orchestrator is always
-   installed in a Factory project.
-
-2. **Should settings be project-scoped or user-scoped?** The current design is
-   project-scoped (`.factory/settings.json` lives in the project directory). A
-   user-scoped settings file (`~/.factory/settings.json`) would let preferences follow
-   the user across projects. **Recommendation**: Start with project-scoped only. Add
-   user-scoped as a layered override in a future version if users request it. Precedence
-   would be: project settings > user settings > schema defaults.
-
-3. **Should settings support `null` to explicitly mean "use default"?** The current
-   design uses `reset` to remove a key, reverting to the default. An alternative is to
-   allow `null` as a stored value meaning "explicitly use default."
-   **Recommendation**: No. `reset` (key removal) is simpler and less ambiguous.
-   A `null` in the file would be confusing when the user hand-edits.
-
-4. **Should the `## Settings` section be required in all skills?** The current design
-   makes it optional -- skills without settings simply skip the settings protocol.
-   **Recommendation**: Keep it optional. Forcing every skill to declare an empty
-   settings section adds boilerplate without value.
+None. All questions from the initial design have been resolved (see decisions 9-12).
