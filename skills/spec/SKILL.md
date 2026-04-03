@@ -101,13 +101,10 @@ hand-wavy output. Discovery is where rigor starts.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `spec`
 - `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md"]`
-
-Read and follow the **Settings Protocol** and **State Tracking** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 - **You are not a stenographer.** Your job is to understand the product well
   enough to build it, not to record what the user said. If something doesn't

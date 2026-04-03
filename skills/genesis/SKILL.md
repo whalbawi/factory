@@ -84,8 +84,8 @@ When `/genesis` is invoked, follow this sequence:
 
 ### Skill Parameters
 
-Read and follow the **Settings Protocol** and **Gate Verification** sections
-in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+Also read and follow the **Gate Verification** section in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### 0. Check for claim mode
 
@@ -267,7 +267,7 @@ process scaffold; `/spec` fills in the project details.
   process-rules sections. This ensures process rules are in place before
   `/spec` appends project-specific content.
 - **Claim mode**: During Step 5 of claim, write the process-rules sections
-  into the existing or new `CLAUDE.md`. Respect the `claim_write_claude_md`
+  into the existing or new `CLAUDE.md`. Respect the `update_project_claude_md`
   setting (prompt/auto/skip).
 
 ### Section Markers
@@ -300,7 +300,7 @@ When generating in bootstrap mode:
 ### Claim Mode Behavior
 
 Follow the same logic as bootstrap mode, but gate on the
-`claim_write_claude_md` setting:
+`update_project_claude_md` setting:
 
 - **`prompt`** (default): Present the proposed process-rules content and
   ask the user to confirm before writing.
@@ -691,14 +691,14 @@ the codebase analysis.
 
 Write the Factory-owned process-rules sections using the template and
 marker logic described in [CLAUDE.md Generation (Process Rules)](#claudemd-generation-process-rules)
-above. Gate on the `claim_write_claude_md` setting:
+above. Gate on the `update_project_claude_md` setting:
 
 - **`prompt`** (default): Present the process-rules content and ask the
   user to confirm.
 - **`auto`**: Write without confirmation.
 - **`skip`**: Skip process-rules entirely. Proceed to Part B.
 
-If `claim_write_claude_md` is `skip`, Part B still runs -- only the
+If `update_project_claude_md` is `skip`, Part B still runs -- only the
 Factory-owned process rules are skipped.
 
 #### Part B: Claim-Specific Project Sections
@@ -1003,14 +1003,17 @@ settings:
       When navigating backward in the pipeline, preserve output files
       from reset phases on disk (marked stale). When false, delete
       output files from reset phases.
-  - name: claim_write_claude_md
+  - name: update_project_claude_md
     type: enum
     values: ["prompt", "auto", "skip"]
     default: "prompt"
     description: >
-      Controls CLAUDE.md behavior during /genesis claim. "prompt" asks
-      the user before writing; "auto" writes without confirmation;
-      "skip" never writes CLAUDE.md during claim.
+      Controls how Factory-owned sections of the project CLAUDE.md are
+      written and kept in sync. Applies during /genesis claim, bootstrap
+      mode, and the drift-sync check that every skill runs on entry.
+      "prompt" asks the user before writing; "auto" writes without
+      confirmation; "skip" never writes or updates Factory-owned
+      sections.
 ```
 
 ## Anti-Patterns

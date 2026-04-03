@@ -54,13 +54,10 @@ Follow these five steps in order. Do not skip steps.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `retro`
 - `{OUTPUT_FILES}` = `["RETRO-YYYY-MM-DD.md"]`
-
-Read and follow the **Settings Protocol** and **State Tracking** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### Step 1: Gather Status
 

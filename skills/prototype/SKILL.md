@@ -35,13 +35,10 @@ Follow these six steps in order. Do not skip steps. Do not reorder.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `prototype`
 - `{OUTPUT_FILES}` = `["prototypes/", "PROTOTYPE-DECISION.md"]`
-
-Read and follow the **Settings Protocol** and **State Tracking** sections in
-[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### Step 1: Read Spec
 

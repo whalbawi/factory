@@ -78,14 +78,16 @@ settings:
       reset phases on disk (marked stale). When false, delete output files
       from reset phases.
 
-  - name: claim_write_claude_md
+  - name: update_project_claude_md
     type: enum
     values: ["prompt", "auto", "skip"]
     default: "prompt"
     description: >
-      Controls CLAUDE.md behavior during /genesis claim. "prompt" asks the
-      user before writing; "auto" writes without confirmation; "skip" never
-      writes CLAUDE.md during claim.
+      Controls how Factory-owned sections of the project CLAUDE.md are
+      written and kept in sync. Applies during /genesis claim, bootstrap
+      mode, and the drift-sync check that every skill runs on entry.
+      "prompt" asks the user before writing; "auto" writes without
+      confirmation; "skip" never writes or updates Factory-owned sections.
 ```
 
 ### /ideation

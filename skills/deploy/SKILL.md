@@ -41,13 +41,12 @@ deployment, confirms health, and produces a receipt.
 
 ### Skill Parameters
 
-For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `deploy`
 - `{OUTPUT_FILES}` = `["DEPLOY-RECEIPT.md"]`
 
-Read and follow the **Settings Protocol**, **State Tracking**,
-**Gate Verification**, and **Secrets Handling** sections in
+Also read and follow the **Gate Verification** section in
 [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 **Additional state fields for this skill:**
