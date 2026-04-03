@@ -166,6 +166,8 @@ Factory is deployed as a tagged release with a GitHub Pages landing page.
 2. Bump `version` in `.claude-plugin/plugin.json` to the new version.
 3. Update `ref` in `.claude-plugin/marketplace.json` to the new tag name
    (e.g., `v0.2.0`). The tag does not exist yet — it is created in step 6.
+   Do not add a `version` field to marketplace.json — the version in
+   plugin.json is authoritative.
 4. Commit the version bump via PR. Merge to main.
 5. Verify CI passes on the merge commit.
 6. Tag the merge commit: `git tag vX.Y.Z`.
