@@ -717,16 +717,47 @@ marked as `completed` and all output files listed.
 
 ### CLAUDE.md Generation
 
-After the final review, the Architect generates a `CLAUDE.md` file in the
-project root. This is the project's living source of truth for all agents
-that will build the product. The Architect derives it from the master spec
-and domain specs.
+After the final review, the Architect writes the project-specific sections of
+`CLAUDE.md`. The Architect derives these from the master spec and domain specs.
 
-#### CLAUDE.md Structure
+The `/factory` orchestrator owns the process-rules sections (Mandatory Process
+Rules, Agent Communication, etc.) and writes them with
+`<!-- factory:process-rules:start/end -->` markers. The `/spec` skill owns the
+project-specific sections and writes them with
+`<!-- spec:project:start/end -->` markers.
+
+#### Normal Flow (CLAUDE.md Already Exists)
+
+When `CLAUDE.md` already exists on disk (the normal case when `/factory` has
+run before `/spec`), the Architect:
+
+1. Reads the existing `CLAUDE.md`.
+2. Looks for `<!-- spec:project:start -->` and `<!-- spec:project:end -->`
+   markers.
+3. If markers exist, replaces the content between them with the updated
+   spec-owned sections.
+4. If markers do not exist, appends the spec-owned sections (inside markers)
+   after the Factory-owned sections (or at the end of the file if no Factory
+   markers are found).
+5. Does NOT modify anything inside
+   `<!-- factory:process-rules:start/end -->` markers.
+
+#### Standalone Fallback (No CLAUDE.md)
+
+When `CLAUDE.md` does not exist (standalone `/spec` invocation without a prior
+`/factory` run), the Architect generates the full file for backward
+compatibility. This includes both Factory-owned and spec-owned sections so that
+the project is fully functional without `/factory`.
+
+The full fallback template includes all sections from both the spec-owned
+template below and the process-rules template from `/factory`. In this case,
+Factory markers are still written around the process-rules sections so that
+`/factory` can claim ownership later if it runs.
+
+#### Spec-Owned Sections Template
 
 ```markdown
-# [Product Name]
-
+<!-- spec:project:start -->
 ## Project Summary
 [1-2 paragraph summary derived from SPEC.md Overview section.]
 
@@ -793,7 +824,17 @@ Do not approve a PR because it "looks fine." Verify it.
 
 ## Key Features
 [Bulleted list of v1 features derived from the spec's In Scope section.]
+<!-- spec:project:end -->
+```
 
+#### Standalone Fallback: Process Rules Template
+
+When generating the full file in standalone mode (no existing CLAUDE.md), append
+the Factory process-rules sections after the spec-owned sections. Use the same
+template that `/factory` uses, wrapped in Factory markers:
+
+```markdown
+<!-- factory:process-rules:start -->
 ## Mandatory Process Rules
 The following rules MUST be followed by each Claude process/agent, for each
 change being made. There are no exceptions.
@@ -843,7 +884,7 @@ to clean up its worktree.
 
 ### Mandatory Retro After Build
 After the build phase completes and all PRs are merged, the team MUST run
-`/retro` before proceeding to QA. This is not optional — it captures process
+`/retro` before proceeding to QA. This is not optional -- it captures process
 learnings while they are fresh. The retro output (`RETRO-{date}.md`) is
 reviewed by the team lead before QA begins.
 
@@ -875,6 +916,7 @@ untracked work is invisible work, and invisible work causes coordination failure
 Agents should DM each other directly (via SendMessage) for technical questions,
 API contract clarifications, and coordination -- don't wait for the team lead to
 relay. Route status updates and task completions through the team lead as usual.
+<!-- factory:process-rules:end -->
 ```
 
 #### Generation Rules
@@ -889,6 +931,14 @@ relay. Route status updates and task completions through the team lead as usual.
   prefixes and scopes.
 - **Project name in worktree pattern.** Replace `[project]` with the actual
   project name.
+- **Spec-owned sections only (normal flow).** When CLAUDE.md already exists,
+  only write the sections inside `<!-- spec:project:start/end -->` markers.
+  Do not touch Factory-owned process rules -- they are `/factory`'s
+  responsibility.
+- **Full file (standalone fallback).** When no CLAUDE.md exists, generate
+  both spec-owned and Factory-owned sections for backward compatibility.
+  Use appropriate markers for each so that `/factory` can claim ownership
+  later.
 
 ---
 
