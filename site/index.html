@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Factory — Idea to Production</title>
+  <meta name="description"
+        content="A pipeline of Claude Code skills that takes software products from idea to production.">
+  <meta property="og:title" content="Factory">
+  <meta property="og:description"
+        content="Idea to production in one pipeline. 10 Claude Code skills for the full development lifecycle.">
+  <meta property="og:url" content="https://whalbawi.github.io/factory">
+  <meta property="og:type" content="website">
+  <style>
+    [data-theme="dark"] {
+      --bg: #0d1117;
+      --bg-secondary: #161b22;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --border: #30363d;
+      --code-bg: #161b22;
+    }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --bg-secondary: #f6f8fa;
+      --text: #1f2328;
+      --text-muted: #656d76;
+      --accent: #0969da;
+      --border: #d0d7de;
+      --code-bg: #f6f8fa;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans",
+                   Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                   "Liberation Mono", monospace;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Nav */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      width: 100%;
+    }
+    .logo { font-weight: 700; font-size: 1rem; color: var(--text-muted); }
+    #theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    #theme-toggle:hover { color: var(--text); border-color: var(--text-muted); }
+
+    /* Main */
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* Hero */
+    #hero { text-align: center; padding: 4rem 0 3rem; }
+    #hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; }
+    .pitch {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin: 0.5rem 0 2rem;
+    }
+    .gh-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .gh-link:hover { color: var(--accent); }
+
+    /* Code blocks */
+    pre {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      text-align: left;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.75rem;
+      font-family: inherit;
+    }
+    .copy-btn:hover { color: var(--text); }
+
+    /* Pipeline */
+    #pipeline { padding: 2rem 0; text-align: center; }
+    .pipeline-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+    .pipeline-flow {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.25rem 0.15rem;
+      align-items: center;
+    }
+    .skill-node {
+      font-size: 0.8rem;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+                   "Liberation Mono", monospace;
+      color: var(--accent);
+      padding: 0.2rem 0.5rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .arrow {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0 0.1rem;
+    }
+
+    /* Install */
+    #install { padding: 2rem 0 3rem; }
+    #install h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .method { margin-bottom: 1.5rem; }
+    .method h3 {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+    footer p { margin: 0.25rem 0; }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 480px) {
+      #hero h1 { font-size: 2rem; }
+      .pitch { font-size: 1rem; }
+      pre { font-size: 0.8rem; padding: 0.75rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <span class="logo">Factory</span>
+      <button id="theme-toggle" aria-label="Toggle dark/light mode">Light</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="hero">
+      <h1>Factory</h1>
+      <p class="pitch">Idea to production in one pipeline.</p>
+      <pre><code>/plugin marketplace add whalbawi/factory
+/plugin install factory@factory-marketplace</code></pre>
+      <a href="https://github.com/whalbawi/factory" class="gh-link">View on GitHub</a>
+    </section>
+
+    <section id="pipeline">
+      <p class="pipeline-label">/factory orchestrates</p>
+      <div class="pipeline-flow">
+        <span class="skill-node">/ideation</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/spec</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/prototype</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/setup</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/build</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/retro</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/qa</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/security</span>
+        <span class="arrow">&rarr;</span>
+        <span class="skill-node">/deploy</span>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <div class="method">
+        <h3>Plugin (recommended)</h3>
+        <pre><code>/plugin marketplace add whalbawi/factory
+/plugin install factory@factory-marketplace</code></pre>
+      </div>
+      <div class="method">
+        <h3>Manual</h3>
+        <pre><code>git clone https://github.com/whalbawi/factory.git
+cd factory && ./install.sh</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built with <a href="https://claude.com/claude-code">Claude Code</a></p>
+    <p>
+      <a href="https://github.com/whalbawi/factory">GitHub</a> &middot;
+      <a href="https://github.com/whalbawi/factory/blob/main/LICENSE">License</a>
+    </p>
+  </footer>
+
+  <script>
+    var toggle = document.getElementById('theme-toggle');
+    var html = document.documentElement;
+    var saved = localStorage.getItem('theme');
+    if (saved) {
+      html.setAttribute('data-theme', saved);
+    }
+    function updateLabel() {
+      toggle.textContent = html.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark';
+    }
+    updateLabel();
+    toggle.addEventListener('click', function() {
+      var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateLabel();
+    });
+    document.querySelectorAll('pre').forEach(function(pre) {
+      var btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(pre.querySelector('code').textContent);
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+      });
+      pre.appendChild(btn);
+    });
+  </script>
+</body>
+</html>

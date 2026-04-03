@@ -1,0 +1,12 @@
+{
+  "name": "factory",
+  "version": "0.1.0",
+  "description": "A pipeline of Claude Code skills that takes software products from idea to production.",
+  "author": {
+    "name": "whalbawi"
+  },
+  "homepage": "https://whalbawi.github.io/factory",
+  "repository": "https://github.com/whalbawi/factory",
+  "license": "MIT",
+  "skills": "./skills/"
+}
