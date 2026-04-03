@@ -125,8 +125,3 @@ on the project's domain decomposition.
 
 - [Claude Code](https://claude.com/claude-code) CLI
 - Git
-
-Factory's skills adapt to whatever git hosting, CI/CD, and deployment
-platform your project uses. The defaults are GitHub (PRs, Actions) and
-Fly.io, but these are preferences, not requirements. The `/spec` phase
-determines the right tooling for each project.
