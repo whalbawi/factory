@@ -115,7 +115,7 @@ The Architect documents the full assignment matrix and execution plan in the mas
 ## State Tracking
 
 Every invocation of `/spec` must update `.factory/state.json`, whether the skill is
-invoked standalone or via the `/factory` orchestrator. This ensures pipeline state
+invoked standalone or via the `/genesis` orchestrator. This ensures pipeline state
 remains consistent and resumable.
 
 ### On Start

@@ -1,6 +1,6 @@
-# /factory claim — Codebase Onboarding for Existing Projects
+# /genesis claim — Codebase Onboarding for Existing Projects
 
-`/factory claim` is a mode of the `/factory` orchestrator skill (not a separate skill)
+`/genesis claim` is a mode of the `/genesis` orchestrator skill (not a separate skill)
 that deeply reads an existing codebase, infers what Factory pipeline phases have already
 been completed, writes `.factory/state.json` with confidence-tagged phase statuses, and
 proposes a `CLAUDE.md` tailored to the project. It is the on-ramp for bringing an existing
@@ -29,9 +29,9 @@ user confirmation.
 
 ## Category
 
-**Conversational mode** of the `/factory` orchestrator — interactive, with a
+**Conversational mode** of the `/genesis` orchestrator — interactive, with a
 read-analyze-propose-confirm loop. No sub-agents are spawned. The orchestrator itself
-executes claim logic inline because claim is a mode of `/factory`, not a delegated phase.
+executes claim logic inline because claim is a mode of `/genesis`, not a delegated phase.
 
 ---
 
@@ -39,7 +39,7 @@ executes claim logic inline because claim is a mode of `/factory`, not a delegat
 
 ### Step 1: Detect Claim Invocation
 
-When the user invokes `/factory claim` (or `/factory` with an argument like "claim this
+When the user invokes `/genesis claim` (or `/genesis` with an argument like "claim this
 project", "onboard this codebase", "take over this project"), the orchestrator enters
 claim mode instead of the normal pipeline flow.
 
@@ -483,11 +483,11 @@ Pipeline status:
 - Build: PARTIAL (source exists, tests not verified)
 - All other phases: PENDING
 
-Recommended next step: /factory to continue from [current_phase].
+Recommended next step: /genesis to continue from [current_phase].
 Or run any skill independently: /qa, /security, /spec, etc.
 ```
 
-The user can then invoke `/factory` (which will read the state file and resume from
+The user can then invoke `/genesis` (which will read the state file and resume from
 the appropriate phase) or invoke individual skills directly.
 
 ---
@@ -746,8 +746,8 @@ Apply these changes? [Y / show diff / edit / skip]
    state.json) can understand how much to trust the backfilled status.
 
 4. **Claim is inline in the orchestrator.** Unlike other phases that are separate
-   skills, claim is executed directly by the `/factory` orchestrator. This is because
-   claim is a mode of `/factory`, not a pipeline phase. It does not appear in the
+   skills, claim is executed directly by the `/genesis` orchestrator. This is because
+   claim is a mode of `/genesis`, not a pipeline phase. It does not appear in the
    pipeline sequence and does not have its own `SKILL.md`.
 
 5. **`current_phase` after claim.** Set to the earliest `partial` phase, or the

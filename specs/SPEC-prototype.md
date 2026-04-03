@@ -100,7 +100,7 @@ Update `.factory/state.json` to record completion (see State Tracking below).
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion, even when run
-standalone (outside the `/factory` orchestrator). Create the `.factory/` directory and
+standalone (outside the `/genesis` orchestrator). Create the `.factory/` directory and
 `state.json` file if they do not exist.
 
 ### On Start

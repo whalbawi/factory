@@ -31,7 +31,7 @@ procedural steps silently.
 /ideation -> /spec -> /prototype -> /setup -> /build -> /retro -> /qa -> /security -> /deploy
 ```
 
-`/retro` cannot be skipped when running the full `/factory` pipeline. It serves as a
+`/retro` cannot be skipped when running the full `/genesis` pipeline. It serves as a
 checkpoint between construction and quality gates — a deliberate pause to assess process
 health before evaluating product quality.
 

@@ -54,7 +54,7 @@ The page has exactly four sections, in order:
    - The 10 skills shown as a horizontal flow:
      `/ideation` -> `/spec` -> `/prototype` -> `/setup` -> `/build` -> `/retro` ->
      `/qa` -> `/security` -> `/deploy`
-   - Plus `/factory` shown as the orchestrator above the flow
+   - Plus `/genesis` shown as the orchestrator above the flow
    - On mobile: wraps to multiple lines
 
 3. **Install** (expanded)
@@ -225,7 +225,7 @@ document.querySelectorAll('pre').forEach(pre => {
 The plugin manifest. The `skills` field points to the directory containing
 skill subdirectories. Claude Code auto-discovers `SKILL.md` files within
 each subdirectory. Skills are namespaced by plugin name — users invoke
-them as `/factory:ideation`, `/factory:spec`, etc.
+them as `/ideation`, `/spec`, etc.
 
 ```json
 {
@@ -349,7 +349,7 @@ Jekyll processing.
 1. **Plugin system schema validated.** The `plugin.json` and `marketplace.json` schemas
    have been verified against Claude Code's plugin documentation. The `skills` field
    points to a directory (not individual files), skills are namespaced by plugin name
-   (e.g., `/factory:ideation`), and `marketplace.json` lives at
+   (e.g., `/ideation`), and `marketplace.json` lives at
    `.claude-plugin/marketplace.json`. Install requires the marketplace name:
    `/plugin install factory@factory-marketplace`.
 

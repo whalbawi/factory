@@ -53,9 +53,11 @@ Read and follow the **Settings Protocol**, **State Tracking**,
 **Additional state fields for this skill:**
 
 On start, also include:
+
 - `"target_environment": "<alpha|staging|prod>"`
 
 On failure, also include:
+
 - `"outputs": ["DEPLOY-RECEIPT.md"]` (receipt is always produced)
 
 ### Step 1 — Gate Verification

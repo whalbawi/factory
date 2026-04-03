@@ -167,7 +167,7 @@ alpha, tested by QA in staging, and cleared by security before going live.
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion,
-even when invoked standalone outside the `/factory` orchestrator pipeline. If
+even when invoked standalone outside the `/genesis` orchestrator pipeline. If
 `.factory/state.json` does not exist, create it.
 
 **On start** — set the deploy phase to `in_progress`:

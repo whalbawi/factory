@@ -99,7 +99,7 @@ for the full structure.
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion, even when
-run standalone (outside the `/factory` pipeline).
+run standalone (outside the `/genesis` pipeline).
 
 **On invocation**, set the monitor phase to `in_progress`:
 
@@ -217,5 +217,5 @@ create it with only the `monitor` phase entry.
   correlation.
 
 - **Do not skip state tracking.** Even when `/monitor` is invoked standalone (not via
-  the `/factory` pipeline), it must update `.factory/state.json`. This ensures that
+  the `/genesis` pipeline), it must update `.factory/state.json`. This ensures that
   the orchestrator can detect that monitoring has been run when it eventually checks.

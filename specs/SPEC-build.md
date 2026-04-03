@@ -210,7 +210,7 @@ Status values: `pending`, `in_progress`, `blocked`, `in_review`, `merged`.
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion, even when
-invoked standalone outside the `/factory` pipeline. If no state file exists, create one.
+invoked standalone outside the `/genesis` pipeline. If no state file exists, create one.
 
 **On start** — set the build phase to `in_progress`:
 

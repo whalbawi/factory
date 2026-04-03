@@ -46,7 +46,9 @@ Follow these seven steps in order. Do not skip steps. Do not reorder.
 For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `setup`
-- `{OUTPUT_FILES}` = `["fly.toml", "fly.alpha.toml", "fly.staging.toml", "Dockerfile", ".github/workflows/ci.yml", ".github/workflows/deploy.yml"]`
+- `{OUTPUT_FILES}` = `["fly.toml", "fly.alpha.toml", "fly.staging.toml",
+  "Dockerfile", ".github/workflows/ci.yml",
+  ".github/workflows/deploy.yml"]`
 
 Read and follow the **Settings Protocol**, **State Tracking**, and
 **Secrets Handling** sections in
