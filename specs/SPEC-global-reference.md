@@ -3,8 +3,8 @@
 ## Overview
 
 The global reference system eliminates instruction duplication across Factory's 10 skill
-files by extracting shared conventions into a single `GLOBAL-REFERENCE.md` file owned by
-the `/genesis` skill. Each skill directory gets a symlink to the canonical file and
+files by extracting shared conventions into a single `GLOBAL-REFERENCE.md` file in the
+`skills/references/` directory. Each skill directory gets a symlink to the canonical file and
 references only the sections it needs. Parameterized sections use placeholders that each
 skill defines in its own `SKILL.md` before the reference directive.
 
@@ -20,7 +20,7 @@ eliminates drift between skills.
 |---------------------|----------------------------------------------------------------|
 | **Required inputs** | Existing skill files with duplicated sections to extract       |
 | **Optional inputs** | None                                                           |
-| **Outputs**         | `skills/genesis/GLOBAL-REFERENCE.md` (canonical file)          |
+| **Outputs**         | `skills/references/GLOBAL-REFERENCE.md` (canonical file)       |
 |                     | `skills/{skill}/GLOBAL-REFERENCE.md` (symlinks, one per skill) |
 | **Side effects**    | Each SKILL.md is modified to reference the global file instead |
 |                     | of inlining shared instructions                                |
@@ -31,7 +31,7 @@ eliminates drift between skills.
 
 ### In scope
 
-1. Extract shared instructions into `skills/genesis/GLOBAL-REFERENCE.md`
+1. Extract shared instructions into `skills/references/GLOBAL-REFERENCE.md`
 2. Create symlinks in each skill directory pointing to the canonical file
 3. Modify each SKILL.md to reference the global file with section selectors
 4. Support parameterized placeholders for skill-specific values
@@ -52,12 +52,14 @@ After implementation:
 
 ```text
 skills/
-  factory/
-    SKILL.md
+  references/
     GLOBAL-REFERENCE.md          <-- canonical file (the only real copy)
+  genesis/
+    SKILL.md
+    GLOBAL-REFERENCE.md          <-- symlink -> ../references/GLOBAL-REFERENCE.md
   build/
     SKILL.md
-    GLOBAL-REFERENCE.md          <-- symlink -> ../factory/GLOBAL-REFERENCE.md
+    GLOBAL-REFERENCE.md          <-- symlink -> ../references/GLOBAL-REFERENCE.md
   deploy/
     SKILL.md
     GLOBAL-REFERENCE.md          <-- symlink
@@ -92,9 +94,13 @@ The file is organized into named sections. Each section is self-contained and
 independently referenceable. Sections that vary per skill use `{PLACEHOLDER}`
 placeholders.
 
+Sections marked `[MANDATORY]` apply to every skill unconditionally -- skills do
+not need to opt into them. All other sections are opt-in: a skill follows them
+only when its `SKILL.md` explicitly references them.
+
 ### Sections
 
-#### 1. Settings Protocol
+#### 1. Settings Protocol [MANDATORY]
 
 Identical across all 10 skills. No placeholders.
 
@@ -107,9 +113,11 @@ skill file. Use stored values where present, defaults where not, and prompt
 for any setting with no default and no stored value.
 ```
 
-#### 2. State Tracking
+#### 2. State Tracking [MANDATORY]
 
-Present in 9 skills (all except `/genesis` orchestrator). Uses placeholders:
+Present in 9 skills (all except `/genesis` orchestrator, which manages state
+differently -- it coordinates phases rather than reporting its own phase). Uses
+placeholders:
 `{PHASE_NAME}` and `{OUTPUT_FILES}`.
 
 ```markdown
@@ -194,9 +202,12 @@ current `git rev-parse HEAD`. If it does not match, the report is stale --
 halt and inform the user that the gate skill must be re-run.
 ```
 
-#### 5. Secrets Handling
+#### 5. Secrets Handling [MANDATORY]
 
-Referenced by `/deploy`, `/security`, `/setup`. No placeholders.
+Applies to all skills as a defensive baseline. Primarily relevant to `/deploy`
+(verification), `/security` (audit), and `/setup` (provisioning), but all
+skills must follow the rule to prevent accidental secret exposure. No
+placeholders.
 
 ```markdown
 ## Secrets Handling
@@ -205,6 +216,43 @@ Verify secrets exist but never echo or log their values. Use name-only
 listing commands (e.g., `fly secrets list`), not value-revealing commands
 (e.g., `fly secrets show`). Never include secret values in commit messages,
 PR descriptions, logs, or output files.
+```
+
+#### 6. CLAUDE.md Drift Sync [MANDATORY]
+
+Runs on every skill invocation after settings resolution. Checks whether
+Factory-owned sections of the project's `CLAUDE.md` have drifted from the
+canonical template and updates them based on the
+`genesis.update_project_claude_md` setting. No placeholders.
+
+```markdown
+## CLAUDE.md Drift Sync
+
+After resolving settings but before executing main logic, check whether
+the project-level `CLAUDE.md` has drifted from the canonical content that
+Factory owns. Factory-owned content is any block delimited by
+`<!-- factory:*:start -->` / `<!-- factory:*:end -->` marker pairs.
+
+Detection:
+1. Read `CLAUDE.md` in the project root. If it does not exist or contains
+   no Factory marker pairs, skip this check.
+2. For each marker pair found, extract the content between the start and
+   end markers.
+3. Compare each extracted block against the corresponding canonical
+   template from the `/genesis` skill file. Ignore leading/trailing
+   whitespace when comparing.
+
+Update:
+If any block has drifted, gate on the `genesis.update_project_claude_md`
+setting:
+- "prompt" (default): Show a diff summary and ask the user to confirm.
+- "auto": Replace stale blocks silently.
+- "skip": Do nothing.
+
+Constraints:
+- Runs at most once per skill invocation.
+- Do not create `CLAUDE.md` if it does not exist.
+- Do not modify content outside Factory markers.
 ```
 
 ---
@@ -274,22 +322,32 @@ Read and follow the **Settings Protocol** and **State Tracking** sections in
 
 ### Section Applicability Matrix
 
-| Section             | factory | build | deploy | ideation | prototype | qa  | retro | security | setup | spec |
-|---------------------|---------|-------|--------|----------|-----------|-----|-------|----------|-------|------|
-| Settings Protocol   |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| State Tracking      |         |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| Post-Merge Cleanup  |         |   Y   |        |          |           |     |       |          |       |      |
-| Gate Verification   |    Y    |       |   Y    |          |           |     |       |          |       |      |
-| Secrets Handling    |         |       |   Y    |          |           |     |   Y   |          |   Y   |      |
+Sections marked `[M]` are mandatory and apply to all skills unconditionally.
+
+| Section              | genesis | build | deploy | ideation | prototype | qa  | retro | security | setup | spec |
+|----------------------|---------|-------|--------|----------|-----------|-----|-------|----------|-------|------|
+| Settings Protocol [M]|    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
+| State Tracking [M]   |   (1)   |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
+| Post-Merge Cleanup   |         |   Y   |        |          |           |     |       |          |       |      |
+| Gate Verification    |    Y    |       |   Y    |          |           |     |       |          |       |      |
+| Secrets Handling [M] |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
+| Drift Sync [M]       |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
 
 Notes:
 
-- `/genesis` does not use State Tracking because the orchestrator manages
-  state differently (it coordinates phases, not reports its own phase).
-- `/build` is the only skill that directly references Post-Merge Cleanup
-  because it orchestrates the worktree-based PR workflow for agent teams.
-- Secrets Handling applies to `/deploy` (verification), `/security` (audit),
-  and `/setup` (provisioning).
+1. `/genesis` does not use the standard State Tracking template because the
+   orchestrator manages state differently (it coordinates phases, not reports
+   its own phase). Although State Tracking is [MANDATORY], genesis is exempt
+   because it has its own state management logic.
+2. `/build` is the only skill that directly references Post-Merge Cleanup
+   because it orchestrates the worktree-based PR workflow for agent teams.
+3. Secrets Handling is [MANDATORY] as a defensive baseline. It is primarily
+   relevant to `/deploy` (verification), `/security` (audit), and `/setup`
+   (provisioning), but all skills must follow the rule to prevent accidental
+   secret exposure.
+4. Drift Sync (CLAUDE.md Drift Sync) runs on every skill invocation after
+   settings resolution. It is skipped if the project has no `CLAUDE.md` or
+   no Factory marker pairs.
 
 ---
 
@@ -300,13 +358,13 @@ Notes:
 From the project root:
 
 ```bash
-for skill in build deploy ideation prototype qa retro security setup spec; do
-  ln -sf ../factory/GLOBAL-REFERENCE.md "skills/$skill/GLOBAL-REFERENCE.md"
+for skill in genesis build deploy ideation prototype qa retro security setup spec; do
+  ln -sf ../references/GLOBAL-REFERENCE.md "skills/$skill/GLOBAL-REFERENCE.md"
 done
 ```
 
-The `/genesis` skill directory contains the real file, so no symlink is
-needed there.
+The canonical file lives in `skills/references/GLOBAL-REFERENCE.md`. Every
+skill directory (including `/genesis`) gets a symlink pointing to it.
 
 ### Git Behavior
 
@@ -358,7 +416,7 @@ On failure, also include:
 
 ### Scenario 1: Adding a New Shared Convention
 
-1. Developer edits `skills/genesis/GLOBAL-REFERENCE.md`, adds a new section
+1. Developer edits `skills/references/GLOBAL-REFERENCE.md`, adds a new section
    `## Output File Naming`
 2. Developer updates the Section Applicability Matrix in this spec
 3. For each skill that should follow the new section, developer adds it to
@@ -369,7 +427,7 @@ On failure, also include:
 ### Scenario 2: Modifying an Existing Convention
 
 1. Developer edits the `## Post-Merge Cleanup` section in
-   `skills/genesis/GLOBAL-REFERENCE.md` (e.g., adds step 4: "Prune remote
+   `skills/references/GLOBAL-REFERENCE.md` (e.g., adds step 4: "Prune remote
    tracking branches")
 2. No changes needed in any SKILL.md -- all symlinks resolve to the updated
    content automatically
@@ -378,7 +436,7 @@ On failure, also include:
 
 1. Developer creates `skills/newskill/SKILL.md`
 2. Developer creates the symlink:
-   `ln -sf ../factory/GLOBAL-REFERENCE.md skills/newskill/GLOBAL-REFERENCE.md`
+   `ln -sf ../references/GLOBAL-REFERENCE.md skills/newskill/GLOBAL-REFERENCE.md`
 3. Developer adds the parameter block and reference directive to the new
    SKILL.md, selecting the appropriate sections
 
@@ -412,7 +470,7 @@ reference directive simply omits that section name.
 | Symlinks, not copies | Symlinks ensure a single source of truth. Git tracks them natively. | Yes |
 | Placeholders in content, not a template engine | Claude reliably substitutes named values from context. No build step needed. | Yes |
 | Extensions stay in SKILL.md | Skill-specific state fields are too varied to parameterize. Keeping them local is clearer. | Yes |
-| No symlink for /genesis itself | The canonical file lives in /genesis's directory. A self-symlink adds no value. | Yes |
+| Neutral `references/` directory for canonical file | The canonical file lives in `skills/references/`, decoupled from any skill. All skill directories (including `/genesis`) symlink to it. | Yes |
 
 ---
 
