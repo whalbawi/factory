@@ -30,44 +30,28 @@ invoke any skill independently.
 
 ## Installation
 
-### Option 1: Global install (available everywhere)
-
-Copy each skill to your Claude Code skills directory:
+Clone the repo and run the installer:
 
 ```bash
-# From the factory repo root
-for skill in skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p ~/.claude/skills/"$name"
-  cp "$skill"SKILL.md ~/.claude/skills/"$name"/SKILL.md
-done
+git clone https://github.com/whalbawi/factory.git
+cd factory
+./install.sh
 ```
 
-### Option 2: Project-local (versioned with your project)
+The installer offers two modes:
 
-Copy the `skills/` directory into your project. Claude Code discovers
-skills in the project directory automatically.
+- **Global** — symlinks skills to `~/.claude/skills/`. Available in all
+  projects. Updates automatically when you pull the repo.
+- **Local** — copies skills to `./skills/` in the current directory.
+  Versioned with your project. Manual updates.
+
+You can also pass flags directly:
 
 ```bash
-cp -r /path/to/factory/skills/ ./skills/
+./install.sh --global      # non-interactive global install
+./install.sh --local       # non-interactive local install
+./install.sh --uninstall   # remove globally installed skills
 ```
-
-### Option 3: Global install with symlinks (versioned + available everywhere)
-
-Symlink from the Factory repo to the global skills directory. Updates to
-the repo are reflected immediately.
-
-```bash
-for skill in skills/*/; do
-  name=$(basename "$skill")
-  mkdir -p ~/.claude/skills/"$name"
-  ln -sf "$(pwd)/$skill"SKILL.md ~/.claude/skills/"$name"/SKILL.md
-done
-```
-
-**Note:** The `/spec` skill is installed separately. If you don't already
-have it, copy it from `~/.claude/skills/spec/` or install it from its own
-repository.
 
 ## Usage
 
@@ -137,47 +121,12 @@ in parallel git worktrees:
 Not all agents are active for every project. The Architect assigns based
 on the project's domain decomposition.
 
-## Repository Structure
-
-```text
-factory/
-  CLAUDE.md                    # Factory project conventions
-  SPEC.md                      # Master specification
-  README.md                    # This file
-  .markdownlint.json           # Markdown linting config
-  .github/workflows/ci.yml     # CI pipeline
-  scripts/
-    check-contracts.sh         # Contract consistency checker
-    check-crossrefs.sh         # Cross-reference checker
-    validate-frontmatter.sh    # YAML frontmatter validator
-  skills/
-    factory/SKILL.md           # Pipeline orchestrator
-    ideation/SKILL.md          # Brainstorming
-    prototype/SKILL.md         # Quick alternatives
-    setup/SKILL.md             # Scaffolding + infra
-    build/SKILL.md             # Agent-team construction
-    retro/SKILL.md             # Team retrospective
-    qa/SKILL.md                # Quality control
-    security/SKILL.md          # Security gate
-    deploy/SKILL.md            # Deployment
-  specs/
-    SPEC-core-skills.md        # Shared conventions index
-    SPEC-orchestration.md      # Orchestrator spec
-    SPEC-ideation.md           # Per-skill specs
-    SPEC-spec.md
-    SPEC-prototype.md
-    SPEC-setup.md
-    SPEC-build.md
-    SPEC-retro.md
-    SPEC-qa.md
-    SPEC-security.md
-    SPEC-deploy.md
-    SPEC-monitor.md            # v1.1
-```
-
 ## Requirements
 
 - [Claude Code](https://claude.com/claude-code) CLI
 - Git
-- GitHub CLI (`gh`) for PR workflows
-- Fly.io CLI (`fly`) for deployment (optional — adapts to other targets)
+
+Factory's skills adapt to whatever git hosting, CI/CD, and deployment
+platform your project uses. The defaults are GitHub (PRs, Actions) and
+Fly.io, but these are preferences, not requirements. The `/spec` phase
+determines the right tooling for each project.
