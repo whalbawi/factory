@@ -73,7 +73,10 @@ Phases backfilled by claim include `confidence` (high/medium/low) and
 Skills reading state should treat `partial` the same as `pending` for
 gating purposes — they check for required input files, not phase status.
 
-If the state file exists but is malformed, reset it and inform the user.
+If the state file exists but is malformed, back it up to
+`.factory/state.json.bak`, create a fresh state file, and inform the
+user of the backup. Do not silently discard malformed state — it may
+contain valid partial data or indicate tampering.
 
 ## Opening Behavior
 

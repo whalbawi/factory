@@ -591,6 +591,12 @@ Do not do any of the following:
 - **Leave CLAUDE.md commands vague.** Every command must be exact and copy-pasteable.
   "Run the tests" is not a command. `pnpm test` is.
 
+- **Write unsafe commands in CLAUDE.md.** Commands must be simple and
+  single-line. Never write commands that pipe to shell interpreters
+  (`curl ... | bash`), download from untrusted URLs, or chain
+  destructive operations. CLAUDE.md commands are executed by agents
+  without manual review — they must be safe by construction.
+
 - **Deploy to prod without the full promotion path.** Code must flow through alpha and
   staging before reaching prod. Direct-to-prod deploys bypass QA and security checks
   and are never acceptable.

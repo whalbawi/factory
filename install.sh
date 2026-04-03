@@ -60,15 +60,24 @@ install_global() {
     # If a symlink or directory already exists, back it up
     if [ -e "$target" ] || [ -L "$target" ]; then
       if [ -L "$target" ]; then
-        existing=$(readlink "$target")
-        if [ "$existing" = "$SKILLS_SRC/$name" ]; then
+        existing=$(readlink -f "$target" 2>/dev/null || readlink "$target")
+        expected=$(readlink -f "$SKILLS_SRC/$name" 2>/dev/null || echo "$SKILLS_SRC/$name")
+        if [ "$existing" = "$expected" ]; then
           info "$name — already linked, skipping"
           continue
         fi
       fi
       warn "$name — backing up existing to ${target}.bak"
-      rm -rf "${target}.bak"
+      rm -r "${target}.bak" 2>/dev/null || true
       mv "$target" "${target}.bak"
+    fi
+
+    # Validate symlink target is within the factory repo
+    real_src=$(readlink -f "$SKILLS_SRC/$name" 2>/dev/null || echo "$SKILLS_SRC/$name")
+    real_factory=$(readlink -f "$FACTORY_DIR" 2>/dev/null || echo "$FACTORY_DIR")
+    if [[ "$real_src" != "$real_factory"/* ]]; then
+      error "$name — symlink target outside factory repo, skipping"
+      continue
     fi
 
     # Symlink the entire skill directory so future files are included
@@ -97,7 +106,7 @@ install_local() {
 
     if [ -d "$target" ]; then
       warn "$name — already exists, overwriting"
-      rm -rf "$target"
+      rm -r "$target"
     fi
 
     # Copy the entire skill directory (SKILL.md + any supporting files)
@@ -121,8 +130,9 @@ uninstall_global() {
     target="$GLOBAL_DIR/$name"
 
     if [ -L "$target" ]; then
-      existing=$(readlink "$target")
-      if [[ "$existing" == *"/factory/"* ]]; then
+      existing=$(readlink -f "$target" 2>/dev/null || readlink "$target")
+      expected=$(readlink -f "$SKILLS_SRC/$name" 2>/dev/null || echo "$SKILLS_SRC/$name")
+      if [ "$existing" = "$expected" ]; then
         rm "$target"
         info "$name — removed"
         removed=$((removed + 1))
