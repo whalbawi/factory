@@ -6,7 +6,11 @@
   "plugins": [
     {
       "name": "factory",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "whalbawi/factory",
+        "ref": "v0.1.0"
+      },
       "description": "Idea to production in one pipeline. 10 Claude Code skills for the full development lifecycle.",
       "version": "0.1.0"
     }
