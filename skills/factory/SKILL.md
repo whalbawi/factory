@@ -84,6 +84,11 @@ When `/factory` is invoked, follow this sequence:
 
 ### 0. Check for claim mode
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 If the user invokes `/factory claim` (or `/factory` with an argument like
 "claim this project", "onboard this codebase", "take over this project"),
 enter **claim mode** instead of the normal pipeline flow. See the
@@ -641,6 +646,71 @@ Or run any skill independently: /qa, /security, /spec, etc.
 - **Treating `partial` as `completed`.** A partial phase has gaps. The
   orchestrator should surface them and let the user decide.
 
+## Settings Command
+
+The `/factory settings` subcommand manages persistent user preferences
+stored in `.factory/settings.json`. Every skill declares its configurable
+settings in a `## Settings` section using a YAML schema. The settings
+command provides four operations.
+
+### `/factory settings` (list)
+
+Display all settings from all installed skills, grouped by skill name.
+For each setting, show:
+
+- Name (fully qualified: `skill.setting_name`)
+- Current value (from `.factory/settings.json`, or "(default)" if using
+  the schema default, or "(unset)" if no value and no default)
+- Default value
+- Description
+
+### `/factory settings get <key>`
+
+Retrieve a single setting's current value, default, and type. The key
+uses dot notation: `skill.setting_name`.
+
+If the key does not match any declared setting, respond with an error
+directing the user to run `/factory settings` to see available settings.
+
+### `/factory settings set <key> <value>`
+
+Validate the value against the skill's declared schema before writing to
+`.factory/settings.json`. If valid, write the value. If invalid, show
+the error (type mismatch, out of range, not in enum values) and do not
+write.
+
+The set operation:
+
+1. Parses the key into skill name and setting name.
+2. Loads the schema from the skill's SKILL.md `## Settings` section.
+3. Validates the value against the schema (type, enum values, min/max).
+4. If valid, writes to `.factory/settings.json` under the skill's
+   namespace.
+5. If invalid, shows the error and does not write.
+
+### `/factory settings reset <key>`
+
+Remove the stored value from `.factory/settings.json`, reverting the
+setting to its schema default. If the setting has no default, it becomes
+"unset" and will trigger first-run discovery on next use. This is the
+only way to re-trigger first-run discovery for a setting.
+
+### Settings Protocol
+
+Every skill that declares settings follows this protocol on entry, after
+reading `.factory/state.json` and before executing its main logic:
+
+1. Parse the skill's `## Settings` YAML schema from its SKILL.md.
+2. Read `.factory/settings.json`. If missing, treat all settings as
+   unset.
+3. For each declared setting, resolve using this precedence: stored value
+   (highest), schema default, first-run discovery (prompt the user).
+4. Validate stored values against the schema. If invalid, log a warning
+   and use the default for the current session without modifying the
+   file.
+5. For settings with no stored value and no default, prompt the user,
+   validate input, and persist the chosen value.
+
 ## Help Text
 
 When the user seems confused about what Factory does, where they are in
@@ -689,6 +759,80 @@ proceed. Do not guess or silently fix things.
 
 If output files referenced in state have been deleted from disk, detect
 this and offer to re-run the phase that produced them.
+
+## Settings
+
+### Global Settings
+
+Global settings are declared here and readable by all skills. They live
+under the `global` namespace in `.factory/settings.json`.
+
+```yaml
+settings:
+  - name: open_report
+    type: boolean
+    default: false
+    description: >
+      Open generated report files (QA-REPORT.md, SECURITY.md,
+      RETRO-{date}.md, DEPLOY-RECEIPT.md) in the default editor or
+      browser after creation
+  - name: auto_commit_outputs
+    type: boolean
+    default: false
+    description: >
+      Automatically git-commit skill output files (reports, receipts,
+      decision docs) after a skill completes successfully
+  - name: confirm_phase_transition
+    type: boolean
+    default: true
+    description: >
+      Require explicit user confirmation before advancing to the next
+      pipeline phase. When false, the orchestrator auto-advances after
+      verifying outputs
+  - name: parallel_domain_agents
+    type: number
+    default: 3
+    min: 1
+    max: 8
+    description: >
+      Maximum number of domain-scoped sub-agents to run concurrently
+      during skills that support per-domain parallelism
+  - name: state_file_path
+    type: string
+    default: ".factory/state.json"
+    description: >
+      Path to the pipeline state file relative to the project root.
+      All skills read and write this file for state tracking
+```
+
+### Per-Skill Settings
+
+```yaml
+settings:
+  - name: auto_detect_artifacts
+    type: boolean
+    default: true
+    description: >
+      On first invocation without a state file, scan for existing
+      artifacts (SPEC.md, package.json, source code) to infer completed
+      phases and suggest a starting point. When false, always start from
+      ideation.
+  - name: preserve_stale_outputs
+    type: boolean
+    default: true
+    description: >
+      When navigating backward in the pipeline, preserve output files
+      from reset phases on disk (marked stale). When false, delete
+      output files from reset phases.
+  - name: claim_write_claude_md
+    type: enum
+    values: ["prompt", "auto", "skip"]
+    default: "prompt"
+    description: >
+      Controls CLAUDE.md behavior during /factory claim. "prompt" asks
+      the user before writing; "auto" writes without confirmation;
+      "skip" never writes CLAUDE.md during claim.
+```
 
 ## Anti-Patterns
 

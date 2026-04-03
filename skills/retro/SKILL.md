@@ -54,6 +54,11 @@ Follow these five steps in order. Do not skip steps.
 
 ### Step 1: Gather Status
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Read all `PROGRESS-{PREFIX}.md` files and the rolled-up `PROGRESS.md`. For each
 agent and task, identify:
 
@@ -251,6 +256,30 @@ should be updated or the work should be reverted]
 
 - **When**: [Suggested timing — after next milestone, after N tasks, or on-demand]
 - **Focus**: [What to pay attention to next time based on current findings]
+```
+
+## Settings
+
+```yaml
+settings:
+  - name: retro_schedule
+    type: enum
+    values: ["after_build", "every_n_merges", "on_demand"]
+    default: "after_build"
+    description: >
+      When retros are triggered in the pipeline. "after_build" runs
+      once after /build completes (mandatory). "every_n_merges" also
+      triggers mid-build retros at the interval set by
+      retro_merge_interval. "on_demand" makes retro purely
+      user-initiated.
+  - name: retro_merge_interval
+    type: number
+    default: 10
+    min: 0
+    description: >
+      Number of PRs merged to main between mid-build retros. Only
+      applies when retro_schedule is "every_n_merges". Set to 0 to
+      disable.
 ```
 
 ## Anti-Patterns — Do Not Do These
