@@ -47,19 +47,32 @@ Check that all prerequisites are met for the target environment.
 
 **Staging**:
 
-1. Verify `QA-REPORT.md` exists with status `PASS` or `PASS WITH WARNINGS`.
-   If missing or not passing, halt — do not deploy.
-2. Verify all CI checks passing on main via `gh run list` or equivalent.
+1. Read `QA-REPORT.md` and parse the `## Summary` section. Extract the
+   `Overall status` field directly from the file content. Verify it is
+   `PASS` or `PASS WITH WARNINGS`. If missing or not passing, halt — do
+   not deploy. Do NOT trust `.factory/state.json` for gate status — always
+   read the actual report file.
+2. Verify the `Tested commit` field in `QA-REPORT.md` matches the current
+   `git rev-parse HEAD`. If it does not match, the report is stale — halt
+   and inform the user that QA must be re-run.
+3. Verify all CI checks passing on main via `gh run list` or equivalent.
 
 **Prod**:
 
-1. Verify `QA-REPORT.md` exists with status `PASS` or `PASS WITH WARNINGS`.
-   If missing or not passing, halt — do not deploy.
-2. Verify `SECURITY.md` exists with status `CLEAR` or `WARNINGS` (not
-   `BLOCKED`). If missing or `BLOCKED`, halt — do not deploy.
-3. Verify all CI checks passing on main via `gh run list` or equivalent.
-4. Verify no unmerged PRs marked as deploy blockers.
-5. Obtain **explicit user confirmation** before proceeding.
+1. Read `QA-REPORT.md` and parse the `## Summary` section. Extract the
+   `Overall status` field directly from the file content. Verify it is
+   `PASS` or `PASS WITH WARNINGS`. If missing or not passing, halt — do
+   not deploy. Do NOT trust `.factory/state.json` for gate status.
+2. Read `SECURITY.md` and parse the `## Summary` section. Extract the
+   `Overall status` field directly from the file content. Verify it is
+   `CLEAR` or `WARNINGS` (not `BLOCKED`). If missing or `BLOCKED`, halt
+   — do not deploy. Do NOT trust `.factory/state.json` for gate status.
+3. Verify the `Tested commit` field in both `QA-REPORT.md` and
+   `SECURITY.md` matches the current `git rev-parse HEAD`. If either
+   does not match, the report is stale — halt and inform the user.
+4. Verify all CI checks passing on main via `gh run list` or equivalent.
+5. Verify no unmerged PRs marked as deploy blockers.
+6. Obtain **explicit user confirmation** before proceeding.
 
 If any hard gate fails (security `BLOCKED`, QA not passing, CI failing),
 stop immediately. Write `DEPLOY-RECEIPT.md` with `status: FAILED` and the
