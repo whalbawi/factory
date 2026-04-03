@@ -1,0 +1,14 @@
+{
+  "name": "factory-marketplace",
+  "owner": {
+    "name": "whalbawi"
+  },
+  "plugins": [
+    {
+      "name": "factory",
+      "source": "./",
+      "description": "Idea to production in one pipeline. 10 Claude Code skills for the full development lifecycle.",
+      "version": "0.1.0"
+    }
+  ]
+}
