@@ -982,3 +982,8 @@ Example state after successful completion:
 - **Don't skip re-generation.** When the master spec changes materially (new
   domain, changed contracts), re-launch affected agents. Stale domain specs
   are worse than no domain specs.
+- **Don't speculate on external schemas.** When the spec references an
+  external system's format (plugin manifests, API schemas, config file
+  formats), verify the actual schema before writing the spec. Read
+  documentation, check examples, or test the system. A spec built on a
+  guessed schema will need correction during build — wasting a round trip.

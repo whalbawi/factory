@@ -11,7 +11,7 @@
 
 ## What Was Deployed
 
-- **Landing page**: https://whalbawi.github.io/factory/ (200 OK)
+- **Landing page**: <https://whalbawi.github.io/factory/> (200 OK)
 - **Git tag**: v0.1.0 pushed to origin
 - **Repo visibility**: Changed from private to public
 - **Plugin marketplace**: `.claude-plugin/marketplace.json` pinned to v0.1.0
@@ -29,13 +29,13 @@
 
 | Check | Status | Notes |
 |-------|--------|-------|
-| GitHub Pages live | PASS | 200 OK at https://whalbawi.github.io/factory/ |
+| GitHub Pages live | PASS | 200 OK at <https://whalbawi.github.io/factory/> |
 | Tag exists | PASS | v0.1.0 at 798e524 |
 | Repo public | PASS | Visibility changed |
 
 ## Install Commands
 
-```
+```text
 /plugin marketplace add whalbawi/factory
 /plugin install factory@factory-marketplace
 ```

@@ -335,3 +335,11 @@ write back. Do not overwrite other phases' state.
 - **Cross-domain edits without coordination**: Modifying files owned by
   another agent's domain causes merge conflicts and integration issues.
   Coordinate first via `SendMessage`.
+- **Skipping progress tracking**: Every agent MUST create and maintain
+  `PROGRESS-{PREFIX}.md`. The Architect MUST maintain `PROGRESS.md`.
+  These files are not optional — `/retro` depends on them to assess
+  build health. A build without progress files forces the retro to
+  reconstruct history from git log, which is unreliable.
+- **Building after gates**: Once `/qa` or `/security` has run, do not
+  merge additional code without re-running the affected gate. Gate
+  reports are tied to a specific commit — new commits invalidate them.
