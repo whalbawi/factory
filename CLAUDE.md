@@ -34,16 +34,19 @@ ensuring pipeline continuity regardless of how a skill is invoked.
 - **`/prototype`**: Quick throwaway implementations. 2-3 alternatives presented. Output:
   `prototypes/`, `PROTOTYPE-DECISION.md`.
 - **`/setup`**: Project scaffolding, CI/CD (GitHub Actions), deployment (Fly.io bias),
-  telemetry (OpenTelemetry). Output: project scaffold, infra config.
-- **`/build`**: Agent teams in git worktrees. Architect + specialists. PR workflow. Output:
-  source code, `PROGRESS.md`.
+  telemetry (OpenTelemetry). Creates three deployment environments: alpha, staging, and
+  prod. Output: project scaffold, infra config.
+- **`/build`**: Agent teams in git worktrees. Architect + specialists. PR workflow. CI
+  inspection every 5 merges; opt-in alpha deploys for early validation. Output: source
+  code, `PROGRESS.md`.
 - **`/retro`**: Team retrospective (NOT code review). Reflects on the build phase, captures
   learnings, and feeds improvements forward. Output: `RETRO-{date}.md`.
 - **`/qa`**: Test coverage, acceptance criteria, edge case hunting, test quality audit.
   Output: `QA-REPORT.md`.
 - **`/security`**: Dependency audit, static analysis, threat model, auth review. Gate
   skill — blocks deploy on critical findings. Output: `SECURITY.md`.
-- **`/deploy`**: Gate verification, Fly.io deployment, health checks, rollback. Output:
+- **`/deploy`**: Gate verification, Fly.io deployment, health checks, rollback.
+  Three-environment promotion model: alpha -> staging -> prod. Output:
   `DEPLOY-RECEIPT.md`.
 - **`/monitor`** (v1.1): Telemetry review, error triage, health assessment. Output:
   `MONITOR-REPORT.md`.

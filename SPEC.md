@@ -77,7 +77,8 @@
 
 4. **`/setup` skill** — Project scaffolding, CI/CD pipeline, deployment infrastructure,
    telemetry. Runs BEFORE `/build` so the foundation is solid. Bias toward Fly.io for
-   deployment. Telemetry is native from day one.
+   deployment — creates three deployment environments: alpha, staging, prod. Telemetry
+   is native from day one.
 
    - *Example*: For a Node.js/React project, `/setup` produces: project directory structure,
      `package.json` with scripts, GitHub Actions CI pipeline (lint, test, build, deploy),
@@ -99,6 +100,11 @@
      Security Reviewer, Technical Writer). Each agent creates a worktree, implements their
      tasks in small commits, runs tests, creates PRs. Architect reviews and merges in
      dependency order.
+   - *CI hygiene*: Every 5 merged PRs, the DevOps agent inspects the CI pipeline for
+     false positives and false negatives, tuning thresholds and test reliability.
+   - *Alpha validation*: Agents can optionally deploy to the alpha environment to
+     validate their work end-to-end, coordinating via SendMessage so multiple agents
+     do not deploy simultaneously.
    - *Edge cases*: Merge conflicts between agents — Architect coordinates resolution.
      Agent's PR fails CI — agent fixes before re-requesting review. Spec ambiguity
      discovered during build — agent flags for Architect decision, Architect updates
@@ -146,11 +152,15 @@
    - *Error behavior*: Critical vulnerability found — skill attempts automated fix. If fix
      is non-trivial, produces detailed remediation guide and blocks `/deploy`.
 
-9. **`/deploy` skill** — Push to production. Handles deployment process with Fly.io bias.
+9. **`/deploy` skill** — Push to production via a three-environment promotion model:
+   alpha (opt-in by agents during `/build` to validate work) -> staging (promoted after
+   `/qa` passes) -> prod (promoted after `/security` clears and user confirms). Handles
+   deployment process with Fly.io bias.
 
-   - *Example*: `/deploy` verifies all gates passed (QA green, security clear), runs
-     `fly deploy`, verifies health checks pass, confirms the deployment is live. Produces
-     deployment receipt: version, timestamp, environment, health check results.
+   - *Example*: `/deploy` verifies all gates passed (QA green, security clear), promotes
+     from staging to prod via `fly deploy`, verifies health checks pass, confirms the
+     deployment is live. Produces deployment receipt: version, timestamp, environment,
+     health check results.
    - *Edge cases*: First deploy vs. subsequent deploys — skill handles initial Fly.io app
      creation. Rollback needed — skill supports `fly releases rollback`. Multi-service
      deployment — skill deploys in dependency order.
@@ -218,17 +228,19 @@
    domain specs, CLAUDE.md
 6. User reviews spec, confirms. Orchestrator invokes `/prototype`
 7. `/prototype` produces 2 alternatives: pure CLI vs. CLI+TUI. User picks TUI.
-8. Orchestrator invokes `/setup` — scaffolds project, CI/CD, Fly.io config (for API
-   backend), telemetry
+8. Orchestrator invokes `/setup` — scaffolds project, CI/CD, creates three Fly.io apps
+   (alpha, staging, prod) for the API backend, telemetry
 9. Orchestrator invokes `/build` — agent teams build in worktrees, submit PRs, Architect
-   coordinates
+   coordinates. Agents optionally deploy to alpha to validate work end-to-end.
 10. Orchestrator invokes `/retro` — gathers agent status, surfaces blockers, produces retro
     summary
 11. Orchestrator invokes `/qa` — full test pass, coverage report, acceptance criteria
-    verification
-12. Orchestrator invokes `/security` — audit, threat model, no critical findings
-13. Orchestrator invokes `/deploy` — deploys API to Fly.io, CLI published as binary
-14. Pipeline complete. User has a deployed product.
+    verification. On success, promotes build to staging.
+12. Orchestrator invokes `/security` — audit, threat model against staging environment, no
+    critical findings
+13. Orchestrator invokes `/deploy` — promotes staging to prod after user confirmation,
+    CLI published as binary
+14. Pipeline complete. User has a deployed product across three environments.
 
 **Scenario: Existing product, new feature ideation**
 
@@ -446,7 +458,8 @@ project repository. No database, no external state.
   modified. Factory wraps it, does not fork it.
 - **Stack-agnostic**: Factory itself prescribes no tech stack for the product being built.
   Stack decisions happen during `/spec` phase per project. Factory does have deployment bias
-  toward Fly.io and telemetry bias toward OpenTelemetry.
+  toward Fly.io (three apps per project: alpha, staging, prod) and telemetry bias toward
+  OpenTelemetry.
 - **State tracking**: Every skill must read and update `.factory/state.json` on invocation
   and completion. This is non-negotiable — state must be maintained regardless of whether
   the skill is invoked via `/factory` or standalone.

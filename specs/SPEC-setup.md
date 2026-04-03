@@ -108,44 +108,152 @@ jobs:
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deployment target environment"
+        required: true
+        type: choice
+        options:
+          - alpha
+          - staging
+          - prod
+  repository_dispatch:
+    types: [deploy-alpha, deploy-staging, deploy-prod]
 
 jobs:
-  deploy:
+  deploy-alpha:
+    if: >
+      (github.event_name == 'workflow_dispatch'
+        && github.event.inputs.target == 'alpha')
+      || (github.event_name == 'repository_dispatch'
+        && github.event.action == 'deploy-alpha')
     runs-on: ubuntu-latest
-    needs: [] # reference CI workflow or use concurrency controls
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - name: Deploy
-        run: flyctl deploy --remote-only
+      - name: Deploy to alpha
+        run: flyctl deploy --remote-only -c fly.alpha.toml
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       - name: Health check
-        run: # curl health endpoint and verify 200
+        run: |
+          sleep 5
+          curl -sf https://$APP_NAME-alpha.fly.dev/health \
+            || echo "::warning::Alpha health check failed"
+
+  deploy-staging:
+    if: >
+      (github.event_name == 'workflow_dispatch'
+        && github.event.inputs.target == 'staging')
+      || (github.event_name == 'repository_dispatch'
+        && github.event.action == 'deploy-staging')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to staging
+        run: flyctl deploy --remote-only -c fly.staging.toml
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf https://$APP_NAME-staging.fly.dev/health
+
+  deploy-prod:
+    if: >
+      (github.event_name == 'workflow_dispatch'
+        && github.event.inputs.target == 'prod')
+      || (github.event_name == 'repository_dispatch'
+        && github.event.action == 'deploy-prod')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to prod
+        run: flyctl deploy --remote-only -c fly.toml
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - name: Health check
+        run: |
+          sleep 5
+          curl -sf https://$APP_NAME.fly.dev/health
+      - name: Auto-rollback on failure
+        if: failure()
+        run: |
+          PREV=$(flyctl releases -c fly.toml --json \
+            | jq -r '.[1].Version')
+          flyctl deploy --image-ref "$PREV" -c fly.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 ```
 
 Adapt the workflow to the specific stack. The examples above are templates — the actual
-commands come from the tech stack identified in Step 1.
+commands come from the tech stack identified in Step 1. The `staging` and `production`
+environments should be configured in GitHub repository settings with appropriate
+protection rules (required reviewers, wait timers, etc.).
 
 ### Step 4: Deployment Infrastructure
 
-Default bias is Fly.io. Generate:
+Default bias is Fly.io. Create **three deployment environments** with separate Fly apps
+and config files:
 
-- `fly.toml` with app name, primary region, scaling configuration, and health check
-  settings
-- `Dockerfile` using multi-stage build pattern (builder stage + minimal runtime stage)
-- Health check endpoint in the application scaffold (e.g., `GET /health` returning
-  `200 OK` with a JSON body including version and uptime)
-- Document secrets management via `fly secrets set` in `CLAUDE.md`
+#### 4a. Create Fly Apps
 
-If the spec specifies a different deployment target, adapt accordingly. The Fly.io
-configuration is the default, not a mandate.
+Run the following to provision all three apps:
+
+```bash
+fly apps create {app}-alpha
+fly apps create {app}-staging
+fly apps create {app}
+```
+
+Where `{app}` is the project name from the spec. If any app already exists, skip it
+with a warning rather than failing.
+
+#### 4b. Generate Deployment Configs
+
+Generate three `fly.toml` variants — one per environment. Each shares the same base
+structure but differs in app name, scaling, and auto-stop behavior.
+
+**Alpha** — `fly.alpha.toml`:
 
 ```toml
-# fly.toml (example structure)
-app = "project-name"
+app = "{app}-alpha"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8080
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+```
+
+Key differences from prod: `min_machines_running = 0` so the app auto-stops when idle
+to save costs, and a longer health check interval.
+
+**Staging** — `fly.staging.toml`:
+
+```toml
+app = "{app}-staging"
 primary_region = "iad"
 
 [build]
@@ -169,6 +277,87 @@ primary_region = "iad"
     interval = "15s"
     timeout = "5s"
 ```
+
+Staging mirrors prod configuration: same region, same VM size, same scaling. This
+ensures that anything that passes staging will behave identically in prod.
+
+**Prod** — `fly.toml`:
+
+```toml
+app = "{app}"
+primary_region = "iad"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8080
+    path = "/health"
+    interval = "15s"
+    timeout = "5s"
+```
+
+#### 4c. Dockerfile
+
+Generate a `Dockerfile` using multi-stage build pattern (builder stage + minimal
+runtime stage). A single Dockerfile is shared across all three environments — the
+`fly.*.toml` files control which app the image deploys to.
+
+#### 4d. Health Check Endpoint
+
+Add a health check endpoint in the application scaffold (e.g., `GET /health` returning
+`200 OK` with a JSON body including version, environment, and uptime).
+
+#### 4e. Secrets Management
+
+Set up separate secrets per environment. Each environment gets its own set of secrets
+so that staging and alpha never touch prod credentials:
+
+```bash
+# Alpha
+fly secrets set -a {app}-alpha DATABASE_URL="..." SOME_API_KEY="..."
+
+# Staging (mirrors prod values where possible)
+fly secrets set -a {app}-staging DATABASE_URL="..." SOME_API_KEY="..."
+
+# Prod
+fly secrets set -a {app} DATABASE_URL="..." SOME_API_KEY="..."
+```
+
+Document the required secrets list in `CLAUDE.md` with placeholder values and
+instructions for each environment.
+
+#### 4f. Promotion Path
+
+The environments form a linear promotion pipeline:
+
+```
+alpha  →  staging  →  prod
+       /qa passes   /security clears + user confirms
+```
+
+- **Alpha to staging**: Promote after `/qa` passes. The staging deploy uses the same
+  image/commit that was validated in alpha.
+- **Staging to prod**: Promote after `/security` clears. Requires explicit user
+  confirmation before the deploy workflow runs. Prod deploys include automatic
+  rollback if the health check fails.
+
+Document this promotion path in `CLAUDE.md` so agents and users understand the flow.
+
+If the spec specifies a different deployment target, adapt accordingly. The Fly.io
+configuration is the default, not a mandate.
 
 ### Step 5: Telemetry Scaffold
 
@@ -196,8 +385,19 @@ Append concrete, copy-pasteable commands to `CLAUDE.md`:
 - **Format**: exact command to run the formatter
 - **Type check**: exact command to run the type checker (if applicable)
 - **Dev server**: exact command to start the development server
-- **Deploy**: exact command to deploy (e.g., `fly deploy`)
+- **Deploy alpha**: exact command to deploy to alpha
+  (e.g., `fly deploy -c fly.alpha.toml`)
+- **Deploy staging**: exact command to deploy to staging
+  (e.g., `fly deploy -c fly.staging.toml`)
+- **Deploy prod**: exact command to deploy to prod
+  (e.g., `fly deploy -c fly.toml`)
+- **Promote alpha to staging**: instructions or command to trigger staging deploy
+  after QA passes
+- **Promote staging to prod**: instructions or command to trigger prod deploy after
+  security clears (including user confirmation step)
 - **Environment setup**: step-by-step instructions to go from clone to running
+- **Secrets management**: commands to set secrets per environment
+  (`fly secrets set -a {app}-alpha ...`, etc.)
 - **Telemetry verification**: command to verify traces/metrics are flowing
 
 Do not overwrite existing `CLAUDE.md` content. Append a `## Commands` section (or
@@ -247,6 +447,8 @@ run standalone (outside the `/factory` orchestrator).
       "completed_at": "2026-04-03T13:00:00Z",
       "outputs": [
         "fly.toml",
+        "fly.alpha.toml",
+        "fly.staging.toml",
         "Dockerfile",
         ".github/workflows/ci.yml",
         ".github/workflows/deploy.yml"
@@ -348,7 +550,8 @@ tooling for that ecosystem.
 
 - **Do not hardcode secrets.** The `.env.example` file must contain only placeholder
   values. Real secrets go into deployment platform secret management (e.g.,
-  `fly secrets set`).
+  `fly secrets set`). Each environment gets its own secrets — never share prod
+  credentials with alpha or staging.
 
 - **Do not skip verification.** A scaffold that does not pass its own linter, tests,
   and build is worse than no scaffold — it teaches agents to ignore failures.
@@ -366,3 +569,7 @@ tooling for that ecosystem.
 
 - **Do not leave the CLAUDE.md commands section vague.** Every command must be exact
   and copy-pasteable. "Run the tests" is not a command. `pnpm test` is.
+
+- **Do not deploy to prod without the full promotion path.** Code must flow through
+  alpha and staging before reaching prod. Direct-to-prod deploys bypass QA and
+  security checks and are never acceptable.
