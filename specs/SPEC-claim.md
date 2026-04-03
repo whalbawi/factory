@@ -549,6 +549,7 @@ executed by their respective skills.
 ### Example 1: Node.js project with CI and Fly.io deployment
 
 **Codebase contents**:
+
 - `package.json` with `test`, `build`, `lint`, `start` scripts
 - `src/` with 30+ TypeScript files
 - `tests/` with 20+ test files using Jest
@@ -648,6 +649,7 @@ for persistence.
 ### Example 2: Python project with minimal tooling
 
 **Codebase contents**:
+
 - `pyproject.toml` with project name, Python 3.12, dependencies
 - `src/` with 10 Python files
 - No test directory, no test files
@@ -693,6 +695,7 @@ I've analyzed your codebase. Here's what I found:
 ### Example 3: Project with existing CLAUDE.md
 
 **Codebase contents**:
+
 - Full Go project with `go.mod`, source code, tests
 - `.github/workflows/ci.yml`
 - Existing `CLAUDE.md` with Project Summary and Architecture sections
