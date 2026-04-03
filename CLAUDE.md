@@ -156,6 +156,46 @@ Once `/qa` or `/security` has run, no further code changes may land on main with
 re-running the affected gate. Gate reports include a `Tested commit` field that `/deploy`
 verifies against HEAD. Any commit after a gate run invalidates the report.
 
+### Deployment
+
+Factory is deployed as a tagged release with a GitHub Pages landing page.
+
+#### Release Flow
+
+1. Verify gates: `/qa` and `/security` must both pass at current HEAD.
+2. Bump `version` in `.claude-plugin/plugin.json` to the new version.
+3. Update `ref` in `.claude-plugin/marketplace.json` to the new tag name
+   (e.g., `v0.2.0`). The tag does not exist yet — it is created in step 6.
+4. Commit the version bump via PR. Merge to main.
+5. Verify CI passes on the merge commit.
+6. Tag the merge commit: `git tag vX.Y.Z`.
+7. Push the tag: `git push origin vX.Y.Z`.
+8. Write a deployment receipt to `deployments/DEPLOY-RECEIPT-{ISO-datetime}.md`.
+9. Commit and push the receipt via PR.
+
+The tag is created after the commit that references it. This works because
+users install from published tags, not from the commit that updated the ref.
+
+#### Environments
+
+- **GitHub Pages**: Served from `/docs` on the `main` branch at
+  `https://whalbawi.github.io/factory/`.
+- **Plugin marketplace**: Users add with `/plugin marketplace add whalbawi/factory`
+  and install with `/plugin install factory@factory-marketplace`. Installs are
+  pinned to the tagged release specified in `.claude-plugin/marketplace.json`.
+
+#### Deployment Receipts
+
+Every deployment produces a receipt at `deployments/DEPLOY-RECEIPT-{ISO-datetime}.md`.
+Receipts are always committed to the repo via PR. They serve as the permanent
+audit trail of what was deployed, when, and what gates were verified.
+
+#### Rollback
+
+- **Tag**: `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`
+- **Pages**: `gh api repos/whalbawi/factory/pages -X DELETE`
+- **Plugin**: Update `marketplace.json` ref to the previous tag, commit, push.
+
 ### Self-Updating Context (CLAUDE.md Auto-Amendment)
 
 CLAUDE.md MUST be amended whenever a learning or course correction occurs:
