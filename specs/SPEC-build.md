@@ -127,6 +127,54 @@ The Architect is responsible for integration:
 - Updates `PROGRESS.md` with rolled-up task status
 - Notifies agents to rebase when `main` advances with new merges
 - Detects integration issues early and reassigns work if needed
+- Tracks the number of PRs merged to `main` and triggers CI inspection
+  every 5 merges (see Phase 5a)
+
+#### Phase 5a: CI Pipeline Inspection
+
+After every 5 PRs merged to `main`, the Architect triggers the OPS agent to
+inspect the GitHub Actions pipeline for reliability. The Architect is
+responsible for tracking the merge count and initiating this check.
+
+The OPS agent inspects for:
+
+- **False positives** — tests that pass when they should not. The OPS agent
+  introduces a known bug or disables a feature and verifies the expected
+  CI gate fails. If the pipeline still passes, the gate is ineffective and
+  must be fixed.
+- **False negatives** — flaky tests, disabled checks, or tests that do not
+  actually catch bugs. The OPS agent investigates any intermittent failures,
+  reviews skipped or disabled test suites, and confirms that each gate
+  rejects the conditions it claims to check.
+
+Results of each inspection are documented in `PROGRESS-OPS.md` with:
+
+- The merge count that triggered the inspection
+- Which gates were tested
+- Any false positives or false negatives found
+- Remediation actions taken or recommended
+
+### Alpha Environment (Opt-In)
+
+During build, agents can optionally deploy to the alpha environment to
+validate their work in a real environment. Alpha is a tool, not a gate — no
+task or PR requires an alpha deploy to be considered complete.
+
+**Prerequisites**: The alpha environment must already exist. It is created
+during `/setup` (see `SPEC-setup.md`).
+
+**Rules**:
+
+- **One deploy at a time, first-come basis.** Agents coordinate via
+  `SendMessage` to avoid conflicts.
+- **Announce before deploying.** The agent sends a message to the team:
+  `"Deploying to alpha for [estimated duration] to test [what]"`
+- **Announce when done.** The agent sends: `"Alpha is free"`
+- **Do not block on alpha.** If alpha is occupied, continue other work and
+  try again later. Do not wait idle.
+- **Alpha results are informational.** A failure on alpha may indicate a
+  real issue worth investigating, but alpha availability or success is
+  never a merge prerequisite.
 
 ### Phase 6: Progress Tracking
 
