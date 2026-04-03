@@ -82,12 +82,12 @@ contain valid partial data or indicate tampering.
 
 When `/factory` is invoked, follow this sequence:
 
-### 0. Check for claim mode
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+Read and follow the **Settings Protocol** and **Gate Verification** sections
+in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### 0. Check for claim mode
 
 If the user invokes `/factory claim` (or `/factory` with an argument like
 "claim this project", "onboard this codebase", "take over this project"),

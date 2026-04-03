@@ -43,12 +43,18 @@ output rather than skipping it.
 
 ## Process
 
-### Step 1: Dependency Audit
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `security`
+- `{OUTPUT_FILES}` = `["SECURITY.md"]`
+
+Read and follow the **Settings Protocol**, **State Tracking**, and
+**Secrets Handling** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Step 1: Dependency Audit
 
 Run stack-appropriate tools to surface known vulnerabilities in third-party
 dependencies:
@@ -209,55 +215,6 @@ that is intentional.]
 suggestions, future audit areas. These do not block deployment
 but should be addressed.]
 ```
-
-## State Tracking
-
-Every invocation must update `.factory/state.json`, even when run standalone
-(outside the `/factory` orchestrator).
-
-**On start** — set the `security` phase to `in_progress`:
-
-```json
-{
-  "pipeline": "factory",
-  "current_phase": "security",
-  "phases": {
-    "security": {
-      "status": "in_progress",
-      "started_at": "<ISO-8601>"
-    }
-  }
-}
-```
-
-**On successful completion** — set to `completed` with outputs:
-
-```json
-{
-  "security": {
-    "status": "completed",
-    "started_at": "<ISO-8601>",
-    "completed_at": "<ISO-8601>",
-    "outputs": ["SECURITY.md"]
-  }
-}
-```
-
-**On failure** — set to `failed` with reason:
-
-```json
-{
-  "security": {
-    "status": "failed",
-    "started_at": "<ISO-8601>",
-    "failed_at": "<ISO-8601>",
-    "failure_reason": "Description of what could not be completed"
-  }
-}
-```
-
-If `.factory/state.json` does not exist, create it with the minimal structure
-shown in the "on start" example above.
 
 ## Settings
 

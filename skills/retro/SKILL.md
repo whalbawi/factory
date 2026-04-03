@@ -52,12 +52,17 @@ team syncs, or post-deploy reviews.
 
 Follow these five steps in order. Do not skip steps.
 
-### Step 1: Gather Status
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `retro`
+- `{OUTPUT_FILES}` = `["RETRO-YYYY-MM-DD.md"]`
+
+Read and follow the **Settings Protocol** and **State Tracking** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Step 1: Gather Status
 
 Read all `PROGRESS-{PREFIX}.md` files and the rolled-up `PROGRESS.md`. For each
 agent and task, identify:
@@ -139,53 +144,6 @@ optional. The retro is conversational:
    the retro missed, or re-prioritize recommendations.
 3. Incorporate the user's feedback.
 4. Only after discussion, write the final `RETRO-{YYYY-MM-DD}.md` file.
-
-## State Tracking Protocol
-
-Update `.factory/state.json` on invocation and completion, even for standalone
-invocations.
-
-**On start** — Set the `retro` phase to `in_progress`:
-
-```json
-{
-  "retro": {
-    "status": "in_progress",
-    "started_at": "<ISO-8601 timestamp>"
-  }
-}
-```
-
-**On completion** — Set to `completed` with outputs:
-
-```json
-{
-  "retro": {
-    "status": "completed",
-    "started_at": "<ISO-8601 timestamp>",
-    "completed_at": "<ISO-8601 timestamp>",
-    "outputs": ["RETRO-YYYY-MM-DD.md"]
-  }
-}
-```
-
-**On failure** — Set to `failed` with reason:
-
-```json
-{
-  "retro": {
-    "status": "failed",
-    "started_at": "<ISO-8601 timestamp>",
-    "failed_at": "<ISO-8601 timestamp>",
-    "failure_reason": "No completed phases found — nothing to retrospect"
-  }
-}
-```
-
-If `.factory/state.json` does not exist, create it with the standard structure
-before recording the retro phase entry. Standalone invocations still update
-state — they add or update the `retro` phase entry without modifying other phase
-entries.
 
 ## Output Template
 

@@ -33,12 +33,17 @@ disposable — it validates the *approach*, not the *implementation*.
 
 Follow these six steps in order. Do not skip steps. Do not reorder.
 
-### Step 1: Read Spec
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `prototype`
+- `{OUTPUT_FILES}` = `["prototypes/", "PROTOTYPE-DECISION.md"]`
+
+Read and follow the **Settings Protocol** and **State Tracking** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Step 1: Read Spec
 
 1. Read `SPEC.md` in the project root. If it does not exist, stop and tell the user to run
    `/spec` first.
@@ -167,67 +172,6 @@ The prototype validates the *approach*, not the *implementation*.
 ```
 
 ---
-
-## State Tracking
-
-Read and write `.factory/state.json` to track progress. Create the `.factory/` directory and
-`state.json` file if they do not exist.
-
-### On Start (Step 1)
-
-If `.factory/state.json` does not exist, create it:
-
-```json
-{
-  "pipeline": "factory",
-  "current_phase": "prototype",
-  "phases": {
-    "prototype": {
-      "status": "in_progress",
-      "started_at": "<ISO-8601 timestamp>"
-    }
-  }
-}
-```
-
-If it already exists, merge the `prototype` phase into the existing `phases` object and set
-`current_phase` to `"prototype"`. Preserve all other phase data.
-
-### On Completion (Step 6)
-
-Update the `prototype` phase:
-
-```json
-{
-  "phases": {
-    "prototype": {
-      "status": "completed",
-      "started_at": "<original start timestamp>",
-      "completed_at": "<ISO-8601 timestamp>",
-      "outputs": ["prototypes/", "PROTOTYPE-DECISION.md"]
-    }
-  }
-}
-```
-
-### On Failure
-
-If you cannot produce a runnable prototype, set the phase to `failed`:
-
-```json
-{
-  "phases": {
-    "prototype": {
-      "status": "failed",
-      "started_at": "<original start timestamp>",
-      "failed_at": "<ISO-8601 timestamp>",
-      "failure_reason": "<what went wrong>"
-    }
-  }
-}
-```
-
-Document partial results in each prototype's README if any prototypes were partially built.
 
 ---
 

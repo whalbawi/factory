@@ -39,12 +39,26 @@ deployment, confirms health, and produces a receipt.
 
 ## Process
 
-### Step 1 — Gate Verification
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `deploy`
+- `{OUTPUT_FILES}` = `["DEPLOY-RECEIPT.md"]`
+
+Read and follow the **Settings Protocol**, **State Tracking**,
+**Gate Verification**, and **Secrets Handling** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+**Additional state fields for this skill:**
+
+On start, also include:
+- `"target_environment": "<alpha|staging|prod>"`
+
+On failure, also include:
+- `"outputs": ["DEPLOY-RECEIPT.md"]` (receipt is always produced)
+
+### Step 1 — Gate Verification
 
 Check that all prerequisites are met for the target environment.
 
@@ -251,61 +265,6 @@ _(Skipped for alpha deployments.)_
 ## Diagnostics
 [If status is FAILED or ROLLED BACK, include relevant logs, error
 messages, and the exact step where failure occurred.]
-```
-
----
-
-## State Tracking
-
-Update `.factory/state.json` on invocation and completion. If the file
-does not exist, create it. When updating an existing file, merge into
-the existing structure — do not overwrite other phases.
-
-**On start** — set deploy phase to `in_progress`:
-
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "in_progress",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z"
-    }
-  }
-}
-```
-
-**On success** — set deploy phase to `completed`:
-
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "completed",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z",
-      "completed_at": "2026-04-03T14:12:00Z",
-      "outputs": ["DEPLOY-RECEIPT.md"]
-    }
-  }
-}
-```
-
-**On failure** — set deploy phase to `failed`:
-
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "failed",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z",
-      "failed_at": "2026-04-03T14:08:00Z",
-      "failure_reason": "Health check returned 503 after deploy; rolled back to v42",
-      "outputs": ["DEPLOY-RECEIPT.md"]
-    }
-  }
-}
 ```
 
 ---
