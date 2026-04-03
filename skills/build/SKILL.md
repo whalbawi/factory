@@ -73,6 +73,11 @@ Branch naming follows `feat/{task-description}` or `fix/{fix-description}`.
 
 ### Phase 1: Task Decomposition
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 The Architect reads `SPEC.md`, every file in `specs/`, and `CLAUDE.md`, then
 produces a task breakdown:
 
@@ -313,6 +318,38 @@ write back. Do not overwrite other phases' state.
 ```
 
 ---
+
+## Settings
+
+```yaml
+settings:
+  - name: max_parallel_agents
+    type: number
+    default: 4
+    min: 1
+    max: 8
+    description: >
+      Maximum number of specialist agents (BE, FE, OPS, etc.) the
+      Architect may run concurrently. Higher values speed up builds
+      but increase resource usage.
+  - name: ci_inspection_interval
+    type: number
+    default: 5
+    min: 0
+    description: >
+      Number of PRs merged to main between CI pipeline inspections.
+      After this many merges, the OPS agent inspects for false
+      positives and false negatives. Set to 0 to disable periodic
+      inspections.
+  - name: progress_tracking
+    type: enum
+    values: ["full", "rollup_only"]
+    default: "full"
+    description: >
+      "full" requires both per-agent PROGRESS-{PREFIX}.md files and
+      the rolled-up PROGRESS.md. "rollup_only" requires only the
+      Architect's PROGRESS.md, reducing overhead for small projects.
+```
 
 ## Anti-Patterns
 

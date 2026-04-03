@@ -99,6 +99,11 @@ hand-wavy output. Discovery is where rigor starts.
 
 ### Mindset
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 - **You are not a stenographer.** Your job is to understand the product well
   enough to build it, not to record what the user said. If something doesn't
   make sense, say so.
@@ -952,6 +957,27 @@ Example state after successful completion:
 ```
 
 ---
+
+## Settings
+
+```yaml
+settings:
+  - name: discovery_track
+    type: enum
+    values: ["auto", "full", "focused", "fast"]
+    default: "auto"
+    description: >
+      Controls discovery depth. "auto" lets the skill calibrate based
+      on the user's first message. "full", "focused", and "fast" force
+      a specific track regardless of input signal.
+  - name: peer_review_enabled
+    type: boolean
+    default: true
+    description: >
+      Enable the peer review pass (Phase 2d) where specialist agents
+      read and critique each other's specs. Disabling saves time but
+      reduces cross-domain consistency.
+```
 
 ## Anti-Patterns
 

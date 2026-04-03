@@ -45,6 +45,11 @@ output rather than skipping it.
 
 ### Step 1: Dependency Audit
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Run stack-appropriate tools to surface known vulnerabilities in third-party
 dependencies:
 
@@ -253,6 +258,30 @@ Every invocation must update `.factory/state.json`, even when run standalone
 
 If `.factory/state.json` does not exist, create it with the minimal structure
 shown in the "on start" example above.
+
+## Settings
+
+```yaml
+settings:
+  - name: history_scan_depth
+    type: enum
+    values: ["full", "recent", "current"]
+    default: "full"
+    description: >
+      How deeply the secrets management review scans git history.
+      "full" scans all commits for leaked secrets. "recent" scans
+      the last 100 commits. "current" scans only the current tree
+      (fastest but misses historically leaked secrets).
+  - name: threat_model_depth
+    type: enum
+    values: ["full", "abbreviated"]
+    default: "full"
+    description: >
+      Depth of the STRIDE threat model in Step 3. "full" enumerates
+      all attack surfaces and threats per domain. "abbreviated"
+      covers only high-risk surfaces (external inputs, auth
+      boundaries, data stores).
+```
 
 ## Anti-Patterns
 

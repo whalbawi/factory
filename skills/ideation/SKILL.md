@@ -25,6 +25,11 @@ Follow these 6 steps in order. Do not skip or combine steps.
 
 ### Step 1: Context Gathering
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Before any brainstorming, understand what exists.
 
 1. Check for an existing codebase in the working directory. If present, read key files (README,
@@ -225,6 +230,27 @@ Do not overwrite other phases in the file. Merge only the `ideation` key.
 ```
 
 On failure, still write a partial `IDEATION.md` with `status: incomplete` (see Output Template).
+
+## Settings
+
+```yaml
+settings:
+  - name: idea_count
+    type: number
+    default: 7
+    min: 3
+    description: >
+      Target number of feature ideas to generate in Step 3 (idea
+      generation). The skill generates between idea_count-2 and
+      idea_count+1 ideas.
+  - name: max_selected_ideas
+    type: number
+    default: 3
+    min: 1
+    description: >
+      Maximum number of ideas the user can select for deep dive in
+      Step 4. Caps scope to keep the ideation session focused.
+```
 
 ## Anti-Patterns
 

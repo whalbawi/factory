@@ -35,6 +35,11 @@ Follow these six steps in order. Do not skip steps. Do not reorder.
 
 ### Step 1: Read Spec
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 1. Read `SPEC.md` in the project root. If it does not exist, stop and tell the user to run
    `/spec` first.
 2. Read any files in `specs/` if that directory exists.
@@ -225,6 +230,27 @@ If you cannot produce a runnable prototype, set the phase to `failed`:
 Document partial results in each prototype's README if any prototypes were partially built.
 
 ---
+
+## Settings
+
+```yaml
+settings:
+  - name: prototype_count
+    type: number
+    default: 3
+    min: 2
+    max: 4
+    description: >
+      Target number of alternative prototypes to generate. Must be at
+      least 2 unless the spec genuinely admits only one approach.
+  - name: auto_run_prototypes
+    type: boolean
+    default: true
+    description: >
+      Automatically execute each prototype to verify it runs before
+      presenting to the user. When false, prototypes are built but not
+      executed.
+```
 
 ## Anti-Patterns
 

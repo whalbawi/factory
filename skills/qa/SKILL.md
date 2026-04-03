@@ -58,6 +58,11 @@ pass.
 
 ### Step 1 — Coverage Analysis
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Run the test suite with coverage instrumentation using the commands from
 `CLAUDE.md`.
 
@@ -259,6 +264,29 @@ always produces a report:
     }
   }
 }
+```
+
+## Settings
+
+```yaml
+settings:
+  - name: write_missing_tests
+    type: boolean
+    default: true
+    description: >
+      When QA finds acceptance criteria without corresponding tests
+      (Step 3), automatically write the missing tests. When false, QA
+      only reports the gaps without writing tests.
+  - name: edge_case_hunting
+    type: enum
+    values: ["full", "light", "skip"]
+    default: "full"
+    description: >
+      Depth of edge case hunting in Step 4. "full" probes all
+      categories (input validation, concurrency, resource exhaustion,
+      state transitions, external failures). "light" probes input
+      validation and error paths only. "skip" disables edge case
+      hunting (not recommended).
 ```
 
 ## Anti-Patterns

@@ -41,6 +41,11 @@ deployment, confirms health, and produces a receipt.
 
 ### Step 1 — Gate Verification
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Check that all prerequisites are met for the target environment.
 
 **Alpha** — no gates required. Skip this step entirely.
@@ -304,6 +309,19 @@ the existing structure — do not overwrite other phases.
 ```
 
 ---
+
+## Settings
+
+```yaml
+settings:
+  - name: auto_archive_receipts
+    type: boolean
+    default: true
+    description: >
+      Automatically rename existing DEPLOY-RECEIPT.md to
+      DEPLOY-RECEIPT-{timestamp}.md before writing a new receipt.
+      When false, overwrite the existing receipt without archiving.
+```
 
 ## Anti-Patterns
 

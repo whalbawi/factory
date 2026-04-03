@@ -43,6 +43,11 @@ Follow these seven steps in order. Do not skip steps. Do not reorder.
 
 ### Step 1: Read Inputs
 
+Before starting, read `.factory/settings.json` and resolve this skill's
+settings against the declared schema. Use stored values where present,
+defaults where not, and prompt for any setting with no default and no
+stored value.
+
 Parse `SPEC.md`, `CLAUDE.md`, and `PROTOTYPE-DECISION.md` (if present) to extract:
 
 - Tech stack and language version
@@ -562,6 +567,12 @@ create it. If it exists, update only the `setup` phase — do not modify other p
 For stacks not listed above, adapt by following the same pattern: identify the canonical
 package manager, linter, formatter, type checker (if applicable), test runner, and build
 tool. Use the most widely adopted tooling for that ecosystem.
+
+## Settings
+
+This skill has no configurable settings. Deployment platform,
+environment provisioning, and telemetry are project-level decisions
+configured in SPEC.md and CLAUDE.md.
 
 ## Anti-Patterns
 
