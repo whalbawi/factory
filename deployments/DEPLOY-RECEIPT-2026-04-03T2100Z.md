@@ -20,7 +20,7 @@
 
 - Settings system (5 global + 17 per-skill settings with schema, storage,
   command, validation, and first-run discovery)
-- /factory claim mode for onboarding existing codebases
+- /genesis claim mode for onboarding existing codebases
 - Deploy gate hardening (parse actual files, commit tracking)
 - All security findings resolved (install.sh, CI pinning, command safety)
 - Retro learnings applied (gate finality, progress tracking, no direct

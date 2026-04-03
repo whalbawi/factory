@@ -720,7 +720,7 @@ marked as `completed` and all output files listed.
 After the final review, the Architect writes the project-specific sections of
 `CLAUDE.md`. The Architect derives these from the master spec and domain specs.
 
-The `/factory` orchestrator owns the process-rules sections (Mandatory Process
+The `/genesis` orchestrator owns the process-rules sections (Mandatory Process
 Rules, Agent Communication, etc.) and writes them with
 `<!-- factory:process-rules:start/end -->` markers. The `/spec` skill owns the
 project-specific sections and writes them with
@@ -728,7 +728,7 @@ project-specific sections and writes them with
 
 #### Normal Flow (CLAUDE.md Already Exists)
 
-When `CLAUDE.md` already exists on disk (the normal case when `/factory` has
+When `CLAUDE.md` already exists on disk (the normal case when `/genesis` has
 run before `/spec`), the Architect:
 
 1. Reads the existing `CLAUDE.md`.
@@ -745,14 +745,14 @@ run before `/spec`), the Architect:
 #### Standalone Fallback (No CLAUDE.md)
 
 When `CLAUDE.md` does not exist (standalone `/spec` invocation without a prior
-`/factory` run), the Architect generates the full file for backward
+`/genesis` run), the Architect generates the full file for backward
 compatibility. This includes both Factory-owned and spec-owned sections so that
-the project is fully functional without `/factory`.
+the project is fully functional without `/genesis`.
 
 The full fallback template includes all sections from both the spec-owned
-template below and the process-rules template from `/factory`. In this case,
+template below and the process-rules template from `/genesis`. In this case,
 Factory markers are still written around the process-rules sections so that
-`/factory` can claim ownership later if it runs.
+`/genesis` can claim ownership later if it runs.
 
 #### Spec-Owned Sections Template
 
@@ -831,7 +831,7 @@ Do not approve a PR because it "looks fine." Verify it.
 
 When generating the full file in standalone mode (no existing CLAUDE.md), append
 the Factory process-rules sections after the spec-owned sections. Use the same
-template that `/factory` uses, wrapped in Factory markers:
+template that `/genesis` uses, wrapped in Factory markers:
 
 ```markdown
 <!-- factory:process-rules:start -->
@@ -937,11 +937,11 @@ relay. Route status updates and task completions through the team lead as usual.
   project name.
 - **Spec-owned sections only (normal flow).** When CLAUDE.md already exists,
   only write the sections inside `<!-- spec:project:start/end -->` markers.
-  Do not touch Factory-owned process rules -- they are `/factory`'s
+  Do not touch Factory-owned process rules -- they are `/genesis`'s
   responsibility.
 - **Full file (standalone fallback).** When no CLAUDE.md exists, generate
   both spec-owned and Factory-owned sections for backward compatibility.
-  Use appropriate markers for each so that `/factory` can claim ownership
+  Use appropriate markers for each so that `/genesis` can claim ownership
   later.
 
 ---

@@ -5,12 +5,12 @@
 The settings system lets users persist preferences across sessions without editing
 SKILL.md files. Each skill declares its configurable settings in a `## Settings` section
 using a YAML code block. User values are stored in `.factory/settings.json`, namespaced
-by skill name. The `/factory settings` subcommand provides list, get, and set operations
+by skill name. The `/genesis settings` subcommand provides list, get, and set operations
 with schema-based validation.
 
 This is a cross-cutting feature, not a pipeline phase. It has no position in the
 pipeline sequence and does not appear in `.factory/state.json` phase tracking. It is a
-subcommand of `/factory` (like `/factory claim`) and a protocol that every skill follows
+subcommand of `/genesis` (like `/genesis claim`) and a protocol that every skill follows
 on entry.
 
 ---
@@ -26,7 +26,7 @@ on entry.
 
 The settings system does NOT produce a report file. It modifies `.factory/settings.json`
 in place. This is the only Factory artifact that is written by every skill (on first-run
-discovery) and by the user (via `/factory settings set`).
+discovery) and by the user (via `/genesis settings set`).
 
 ---
 
@@ -61,7 +61,7 @@ settings:
 |               |          |          | discovery (skill will prompt on first use).   |
 | `min`         | No       | number   | Only valid for `number` type.                 |
 | `max`         | No       | number   | Only valid for `number` type.                 |
-| `description` | Yes      | string   | Shown to the user in `/factory settings` list |
+| `description` | Yes      | string   | Shown to the user in `/genesis settings` list |
 
 ### Type Rules
 
@@ -120,7 +120,7 @@ name-value pairs.
 
 ### Storage Rules
 
-1. The file is created on first write (first `/factory settings set` or first-run
+1. The file is created on first write (first `/genesis settings set` or first-run
    discovery). It does not exist in a fresh project.
 2. The file is valid JSON. If it becomes malformed, back it up to
    `.factory/settings.json.bak`, create a fresh `{}` file, and inform the user.
@@ -206,12 +206,12 @@ protocol and references them in its logic.
 
 ---
 
-## The `/factory settings` Command
+## The `/genesis settings` Command
 
-The `/factory settings` command is a subcommand of the `/factory` orchestrator. It
+The `/genesis settings` command is a subcommand of the `/genesis` orchestrator. It
 provides three operations: list, get, and set.
 
-### `/factory settings` (list)
+### `/genesis settings` (list)
 
 Display all settings from all installed skills, grouped by skill name. For each
 setting, show:
@@ -278,45 +278,45 @@ Example output:
 If no settings file exists and no skills declare settings, say:
 `No settings declared by any installed skill.`
 
-### `/factory settings get <key>`
+### `/genesis settings get <key>`
 
 Retrieve a single setting value. The key uses dot notation: `skill.setting_name`.
 
 ```text
-> /factory settings get build.max_parallel_agents
+> /genesis settings get build.max_parallel_agents
 build.max_parallel_agents = 4
 ```
 
 If the setting is unset and has a default:
 
 ```text
-> /factory settings get qa.edge_case_hunting
+> /genesis settings get qa.edge_case_hunting
 qa.edge_case_hunting = full (default)
 ```
 
 If the key does not match any declared setting:
 
 ```text
-> /factory settings get qa.nonexistent
-Error: qa.nonexistent is not a declared setting. Run /factory settings to see
+> /genesis settings get qa.nonexistent
+Error: qa.nonexistent is not a declared setting. Run /genesis settings to see
 available settings.
 ```
 
-### `/factory settings set <key> <value>`
+### `/genesis settings set <key> <value>`
 
 Set a setting value. Validates the value against the skill's schema before writing.
 
 ```text
-> /factory settings set build.max_parallel_agents 6
+> /genesis settings set build.max_parallel_agents 6
 Set build.max_parallel_agents = 6
 
-> /factory settings set build.max_parallel_agents abc
+> /genesis settings set build.max_parallel_agents abc
 Error: build.max_parallel_agents expects a number, got "abc"
 
-> /factory settings set build.max_parallel_agents 12
+> /genesis settings set build.max_parallel_agents 12
 Error: build.max_parallel_agents must be between 1 and 8, got 12
 
-> /factory settings set qa.edge_case_hunting light
+> /genesis settings set qa.edge_case_hunting light
 Set qa.edge_case_hunting = light
 ```
 
@@ -328,17 +328,17 @@ The set operation:
 4. If valid, writes to `.factory/settings.json`.
 5. If invalid, shows the error and does not write.
 
-### `/factory settings reset <key>`
+### `/genesis settings reset <key>`
 
 Remove a setting from `.factory/settings.json`, reverting it to its default (or to
 "unset" if no default). This is the only way to re-trigger first-run discovery for a
 setting.
 
 ```text
-> /factory settings reset build.max_parallel_agents
+> /genesis settings reset build.max_parallel_agents
 Reset build.max_parallel_agents (will use default: 4)
 
-> /factory settings reset global.open_report
+> /genesis settings reset global.open_report
 Reset global.open_report (will use default: false)
 ```
 
@@ -349,10 +349,10 @@ Reset global.open_report (will use default: false)
 ### Global Settings
 
 Global settings live under the `global` namespace in `.factory/settings.json`. They
-apply across all skills. Global settings are declared in the `/factory` orchestrator's
-SKILL.md (since `/factory` is the only skill that governs cross-cutting behavior).
+apply across all skills. Global settings are declared in the `/genesis` orchestrator's
+SKILL.md (since `/genesis` is the only skill that governs cross-cutting behavior).
 
-Any skill can read global settings. Only the `/factory` skill declares them.
+Any skill can read global settings. Only the `/genesis` skill declares them.
 
 The five global settings:
 
@@ -419,9 +419,9 @@ behavior must explicitly read `global.open_report`.
 
 These are the actual settings from the reviewed inventory. 5 global + 17 per-skill.
 
-### /factory (orchestrator) -- Global + Per-Skill Settings
+### /genesis (orchestrator) -- Global + Per-Skill Settings
 
-Global settings (declared by `/factory`, readable by all skills):
+Global settings (declared by `/genesis`, readable by all skills):
 
 ```yaml
 settings:
@@ -482,7 +482,7 @@ settings:
     values: ["prompt", "auto", "skip"]
     default: "prompt"
     description: >
-      Controls CLAUDE.md behavior during /factory claim. "prompt" asks the
+      Controls CLAUDE.md behavior during /genesis claim. "prompt" asks the
       user before writing; "auto" writes without confirmation; "skip" never
       writes CLAUDE.md during claim.
 ```
@@ -708,7 +708,7 @@ updated mid-run.
 
 ### Validation Timing
 
-- **On write** (`/factory settings set`): Validate before writing. Reject invalid
+- **On write** (`/genesis settings set`): Validate before writing. Reject invalid
   values with a clear error message.
 - **On read** (settings protocol step 3): Validate stored values. Replace invalid
   values with defaults for the current session. Log a warning. Do not modify the
@@ -797,8 +797,8 @@ updated mid-run.
    platforms, and tech stack choices belong in CLAUDE.md or SPEC.md. The reviewed
    inventory (5 global + 17 per-skill) reflects this principle.
 
-9. **`/factory settings` is a subcommand, not a standalone skill.** The orchestrator is
-   always installed in a Factory project, so routing through `/factory` is safe and
+9. **`/genesis settings` is a subcommand, not a standalone skill.** The orchestrator is
+   always installed in a Factory project, so routing through `/genesis` is safe and
    keeps meta-operations consolidated.
 
 10. **Project-scoped settings only.** Settings live in `.factory/settings.json` in the

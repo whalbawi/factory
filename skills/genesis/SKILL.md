@@ -1,5 +1,5 @@
 ---
-name: factory
+name: genesis
 description: Use when the user wants to "build a product", "start a project",
   "go from idea to production", "use the factory pipeline", "claim this
   project", "onboard this codebase", or needs to be guided through the full
@@ -59,7 +59,7 @@ Each phase has one of five sub-states:
 - `partial` — some artifacts exist but phase is not fully satisfied
   (written only by claim mode)
 
-When a project is onboarded via `/factory claim`, the state file also
+When a project is onboarded via `/genesis claim`, the state file also
 includes:
 
 - `claimed` (boolean) — whether claim completed successfully
@@ -80,7 +80,7 @@ contain valid partial data or indicate tampering.
 
 ## Opening Behavior
 
-When `/factory` is invoked, follow this sequence:
+When `/genesis` is invoked, follow this sequence:
 
 ### Skill Parameters
 
@@ -89,7 +89,7 @@ in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 ### 0. Check for claim mode
 
-If the user invokes `/factory claim` (or `/factory` with an argument like
+If the user invokes `/genesis claim` (or `/genesis` with an argument like
 "claim this project", "onboard this codebase", "take over this project"),
 enter **claim mode** instead of the normal pipeline flow. See the
 [Claim Mode](#claim-mode) section below.
@@ -250,14 +250,14 @@ When a phase is skipped, record the skip in state with the reason:
 
 ## CLAUDE.md Generation (Process Rules)
 
-The `/factory` orchestrator owns the process-rules sections of the target
+The `/genesis` orchestrator owns the process-rules sections of the target
 project's `CLAUDE.md`. These sections define how agents work -- worktree
 isolation, PR workflow, progress tracking, retro requirements, and
 self-updating context. They are not project-specific and do not depend on
 the spec.
 
 The `/spec` skill owns the project-specific sections (summary, architecture,
-technical standards, quality standards, key features). `/factory` writes the
+technical standards, quality standards, key features). `/genesis` writes the
 process scaffold; `/spec` fills in the project details.
 
 ### When to Generate
@@ -504,7 +504,7 @@ pre-pipeline step — not a phase in the pipeline sequence.
 
 ### Triggering Claim
 
-Claim activates when the user invokes `/factory claim` or uses phrasing
+Claim activates when the user invokes `/genesis claim` or uses phrasing
 like "claim this project", "onboard this codebase", or "take over this
 project".
 
@@ -801,7 +801,7 @@ Pipeline status:
 - Build: PARTIAL (source exists, tests not verified)
 - All other phases: PENDING
 
-Recommended next step: /factory to continue from [current_phase].
+Recommended next step: /genesis to continue from [current_phase].
 Or run any skill independently: /qa, /security, /spec, etc.
 ```
 
@@ -827,12 +827,12 @@ Or run any skill independently: /qa, /security, /spec, etc.
 
 ## Settings Command
 
-The `/factory settings` subcommand manages persistent user preferences
+The `/genesis settings` subcommand manages persistent user preferences
 stored in `.factory/settings.json`. Every skill declares its configurable
 settings in a `## Settings` section using a YAML schema. The settings
 command provides four operations.
 
-### `/factory settings` (list)
+### `/genesis settings` (list)
 
 Display all settings from all installed skills, grouped by skill name.
 For each setting, show:
@@ -843,15 +843,15 @@ For each setting, show:
 - Default value
 - Description
 
-### `/factory settings get <key>`
+### `/genesis settings get <key>`
 
 Retrieve a single setting's current value, default, and type. The key
 uses dot notation: `skill.setting_name`.
 
 If the key does not match any declared setting, respond with an error
-directing the user to run `/factory settings` to see available settings.
+directing the user to run `/genesis settings` to see available settings.
 
-### `/factory settings set <key> <value>`
+### `/genesis settings set <key> <value>`
 
 Validate the value against the skill's declared schema before writing to
 `.factory/settings.json`. If valid, write the value. If invalid, show
@@ -867,7 +867,7 @@ The set operation:
    namespace.
 5. If invalid, shows the error and does not write.
 
-### `/factory settings reset <key>`
+### `/genesis settings reset <key>`
 
 Remove the stored value from `.factory/settings.json`, reverting the
 setting to its schema default. If the setting has no default, it becomes
@@ -911,7 +911,7 @@ Factory guides you from idea to deployed product through these phases:
 Coming in v1.1:
   /monitor   -> Health monitoring and bug triage
 
-You can run the full pipeline with /factory, or use any skill
+You can run the full pipeline with /genesis, or use any skill
 independently.
 Current status: [phase] ([X of 9] phases complete)
 ```
@@ -1008,7 +1008,7 @@ settings:
     values: ["prompt", "auto", "skip"]
     default: "prompt"
     description: >
-      Controls CLAUDE.md behavior during /factory claim. "prompt" asks
+      Controls CLAUDE.md behavior during /genesis claim. "prompt" asks
       the user before writing; "auto" writes without confirmation;
       "skip" never writes CLAUDE.md during claim.
 ```

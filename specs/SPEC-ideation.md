@@ -79,7 +79,7 @@ Write `IDEATION.md` using the output template below.
 ## State Tracking
 
 Every invocation of `/ideation` must update `.factory/state.json`, whether the skill
-is invoked standalone or via the `/factory` orchestrator. This ensures pipeline state
+is invoked standalone or via the `/genesis` orchestrator. This ensures pipeline state
 remains consistent and resumable.
 
 ### On Start

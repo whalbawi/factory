@@ -421,7 +421,7 @@ green on first checkout. Report all verification results to the user.
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion, even when
-run standalone (outside the `/factory` orchestrator).
+run standalone (outside the `/genesis` orchestrator).
 
 **On start**: Set the `setup` phase to `in_progress`:
 

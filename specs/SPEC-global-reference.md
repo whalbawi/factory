@@ -4,7 +4,7 @@
 
 The global reference system eliminates instruction duplication across Factory's 10 skill
 files by extracting shared conventions into a single `GLOBAL-REFERENCE.md` file owned by
-the `/factory` skill. Each skill directory gets a symlink to the canonical file and
+the `/genesis` skill. Each skill directory gets a symlink to the canonical file and
 references only the sections it needs. Parameterized sections use placeholders that each
 skill defines in its own `SKILL.md` before the reference directive.
 
@@ -20,7 +20,7 @@ eliminates drift between skills.
 |---------------------|----------------------------------------------------------------|
 | **Required inputs** | Existing skill files with duplicated sections to extract       |
 | **Optional inputs** | None                                                           |
-| **Outputs**         | `skills/factory/GLOBAL-REFERENCE.md` (canonical file)          |
+| **Outputs**         | `skills/genesis/GLOBAL-REFERENCE.md` (canonical file)          |
 |                     | `skills/{skill}/GLOBAL-REFERENCE.md` (symlinks, one per skill) |
 | **Side effects**    | Each SKILL.md is modified to reference the global file instead |
 |                     | of inlining shared instructions                                |
@@ -31,7 +31,7 @@ eliminates drift between skills.
 
 ### In scope
 
-1. Extract shared instructions into `skills/factory/GLOBAL-REFERENCE.md`
+1. Extract shared instructions into `skills/genesis/GLOBAL-REFERENCE.md`
 2. Create symlinks in each skill directory pointing to the canonical file
 3. Modify each SKILL.md to reference the global file with section selectors
 4. Support parameterized placeholders for skill-specific values
@@ -109,7 +109,7 @@ for any setting with no default and no stored value.
 
 #### 2. State Tracking
 
-Present in 9 skills (all except `/factory` orchestrator). Uses placeholders:
+Present in 9 skills (all except `/genesis` orchestrator). Uses placeholders:
 `{PHASE_NAME}` and `{OUTPUT_FILES}`.
 
 ```markdown
@@ -183,7 +183,7 @@ This prevents stale branches and worktrees from accumulating.
 
 #### 4. Gate Verification
 
-Referenced by `/deploy` and `/factory`. No placeholders.
+Referenced by `/deploy` and `/genesis`. No placeholders.
 
 ```markdown
 ## Gate Verification
@@ -283,7 +283,8 @@ Read and follow the **Settings Protocol** and **State Tracking** sections in
 | Secrets Handling    |         |       |   Y    |          |           |     |   Y   |          |   Y   |      |
 
 Notes:
-- `/factory` does not use State Tracking because the orchestrator manages
+
+- `/genesis` does not use State Tracking because the orchestrator manages
   state differently (it coordinates phases, not reports its own phase).
 - `/build` is the only skill that directly references Post-Merge Cleanup
   because it orchestrates the worktree-based PR workflow for agent teams.
@@ -304,7 +305,7 @@ for skill in build deploy ideation prototype qa retro security setup spec; do
 done
 ```
 
-The `/factory` skill directory contains the real file, so no symlink is
+The `/genesis` skill directory contains the real file, so no symlink is
 needed there.
 
 ### Git Behavior
@@ -357,7 +358,7 @@ On failure, also include:
 
 ### Scenario 1: Adding a New Shared Convention
 
-1. Developer edits `skills/factory/GLOBAL-REFERENCE.md`, adds a new section
+1. Developer edits `skills/genesis/GLOBAL-REFERENCE.md`, adds a new section
    `## Output File Naming`
 2. Developer updates the Section Applicability Matrix in this spec
 3. For each skill that should follow the new section, developer adds it to
@@ -368,7 +369,7 @@ On failure, also include:
 ### Scenario 2: Modifying an Existing Convention
 
 1. Developer edits the `## Post-Merge Cleanup` section in
-   `skills/factory/GLOBAL-REFERENCE.md` (e.g., adds step 4: "Prune remote
+   `skills/genesis/GLOBAL-REFERENCE.md` (e.g., adds step 4: "Prune remote
    tracking branches")
 2. No changes needed in any SKILL.md -- all symlinks resolve to the updated
    content automatically
@@ -411,7 +412,7 @@ reference directive simply omits that section name.
 | Symlinks, not copies | Symlinks ensure a single source of truth. Git tracks them natively. | Yes |
 | Placeholders in content, not a template engine | Claude reliably substitutes named values from context. No build step needed. | Yes |
 | Extensions stay in SKILL.md | Skill-specific state fields are too varied to parameterize. Keeping them local is clearer. | Yes |
-| No symlink for /factory itself | The canonical file lives in /factory's directory. A self-symlink adds no value. | Yes |
+| No symlink for /genesis itself | The canonical file lives in /genesis's directory. A self-symlink adds no value. | Yes |
 
 ---
 

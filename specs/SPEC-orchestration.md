@@ -2,7 +2,7 @@
 
 ## Overview
 
-This domain owns the `/factory` orchestrator skill — the entry point that drives the user
+This domain owns the `/genesis` orchestrator skill — the entry point that drives the user
 through the full pipeline. It manages phase sequencing, state persistence, phase transitions,
 backward navigation, and resumption after interruption.
 
@@ -87,7 +87,7 @@ State lives in `.factory/state.json`:
 }
 ```
 
-State tracking is not exclusive to the `/factory` orchestrator. Every skill updates
+State tracking is not exclusive to the `/genesis` orchestrator. Every skill updates
 `.factory/state.json` on invocation and completion, even when run standalone outside the
 pipeline. The orchestrator reads existing state but does not own it exclusively — it
 participates in a shared state model where individual skills are also responsible for
@@ -163,7 +163,7 @@ When the user selects "Go back to [phase]":
 
 ### Resumption Logic
 
-When `/factory` is invoked and `.factory/state.json` exists:
+When `/genesis` is invoked and `.factory/state.json` exists:
 
 1. Read state file
 2. Identify the last completed phase and the current phase
@@ -191,7 +191,7 @@ When `/factory` is invoked and `.factory/state.json` exists:
 
 The orchestrator supports starting at any phase, not just the beginning:
 
-1. User invokes `/factory` with no prior state
+1. User invokes `/genesis` with no prior state
 2. Orchestrator checks for existing artifacts:
 
    - `SPEC.md` exists? -> can skip `/ideation` and `/spec`
@@ -259,9 +259,9 @@ description: Use when the user wants to "build a product", "start a project",
 
 ### Orchestrator Acceptance Criteria
 
-1. **Fresh start**: `/factory` on empty repo starts at ideation/spec phase
-2. **Resumption**: `/factory` with existing state file resumes correctly
-3. **Skip detection**: `/factory` with existing SPEC.md offers to skip spec phase
+1. **Fresh start**: `/genesis` on empty repo starts at ideation/spec phase
+2. **Resumption**: `/genesis` with existing state file resumes correctly
+3. **Skip detection**: `/genesis` with existing SPEC.md offers to skip spec phase
 4. **Phase gating**: Cannot advance past retro, QA, or security if they report failures
 5. **State persistence**: State file is updated after every phase transition
 6. **Shared state**: Individual skills update `.factory/state.json` independently; the
@@ -293,7 +293,7 @@ description: Use when the user wants to "build a product", "start a project",
 - Output files referenced in state but deleted from disk — detect and re-run phase
 - User invokes a sub-skill directly while factory pipeline is active — state file should
   not be corrupted; standalone skill writes are compatible with orchestrator reads
-- Two `/factory` invocations simultaneously — not supported in v1, but must not corrupt
+- Two `/genesis` invocations simultaneously — not supported in v1, but must not corrupt
   state file
 - Backward jump to a phase whose output files were manually edited — warn user that the
   phase will overwrite those files if re-run
@@ -387,7 +387,7 @@ Factory guides you from idea to deployed product through these phases:
 Coming in v1.1:
   /monitor   → Health monitoring and bug triage
 
-You can run the full pipeline with /factory, or use any skill independently.
+You can run the full pipeline with /genesis, or use any skill independently.
 Current status: [phase] ([X of 9] phases complete)
 ```
 
@@ -396,6 +396,6 @@ Current status: [phase] ([X of 9] phases complete)
 The `.factory/state.json` file is human-readable by design. If a user opens it, they should
 understand their pipeline status without consulting docs.
 
-Every skill — whether invoked via the `/factory` pipeline or standalone — reads and writes
+Every skill — whether invoked via the `/genesis` pipeline or standalone — reads and writes
 `.factory/state.json`. This means state is always up to date, even if the user runs
 `/build` or `/retro` directly without the orchestrator.

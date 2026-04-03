@@ -112,7 +112,7 @@ Write `QA-REPORT.md` following the template in the Output Template section below
 ## State Tracking
 
 Every invocation of `/qa` must update `.factory/state.json`, whether the skill is
-invoked standalone or as part of the `/factory` pipeline. If `.factory/state.json` does
+invoked standalone or as part of the `/genesis` pipeline. If `.factory/state.json` does
 not exist, create it.
 
 ### On Start
@@ -257,6 +257,6 @@ minor inconsistencies.]
   report AND fix it. The report is the audit trail; the fix is the remediation. Both
   are required.
 
-- **Do not skip state tracking.** Even when invoked standalone (not via `/factory`),
+- **Do not skip state tracking.** Even when invoked standalone (not via `/genesis`),
   the skill must update `.factory/state.json`. This ensures the orchestrator can detect
-  that QA has been run if the user later invokes `/factory`.
+  that QA has been run if the user later invokes `/genesis`.

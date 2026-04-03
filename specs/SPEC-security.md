@@ -112,7 +112,7 @@ Write `SECURITY.md` following the output template below. Set the overall status:
 ## State Tracking
 
 Every skill must update `.factory/state.json` on invocation and completion, even when
-run standalone (outside the `/factory` orchestrator).
+run standalone (outside the `/genesis` orchestrator).
 
 **On start** — set the `security` phase to `in_progress`:
 
