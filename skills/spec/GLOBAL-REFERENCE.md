@@ -1,0 +1,1 @@
+../factory/GLOBAL-REFERENCE.md
