@@ -270,9 +270,9 @@ remediation. Both are required. A fix without documentation means the next
 QA pass cannot verify the regression stayed fixed.
 
 **Do not skip state tracking.** Even when invoked standalone (not via
-`/factory`), the skill must update `.factory/state.json`. This ensures the
+`/genesis`), the skill must update `.factory/state.json`. This ensures the
 orchestrator can detect that QA has been run if the user later invokes
-`/factory`.
+`/genesis`.
 
 **Do not report failures without investigation.** When tests fail, QA
 investigates the root cause. "Test X failed" is not a finding — "Test X

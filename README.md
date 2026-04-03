@@ -8,7 +8,7 @@ setup, build, retrospective, QA, security, and deployment.
 ## What Factory Does
 
 Factory provides 10 Claude Code skills that cover the entire software
-development lifecycle. You can run the full pipeline with `/factory`, or
+development lifecycle. You can run the full pipeline with `/genesis`, or
 invoke any skill independently.
 
 ```text
@@ -17,7 +17,7 @@ invoke any skill independently.
 
 | Skill | Purpose |
 |-------|---------|
-| `/factory` | Orchestrator — guides you through the full pipeline |
+| `/genesis` | Orchestrator — guides you through the full pipeline |
 | `/ideation` | Brainstorm features for new or existing products |
 | `/spec` | Turn an idea into a detailed, buildable specification |
 | `/prototype` | Quick throwaway implementations to compare alternatives |
@@ -58,7 +58,7 @@ You can also pass flags directly:
 ### Full pipeline (new project)
 
 ```text
-> /factory
+> /genesis
 
 Let's build something. Do you have an idea already, or want to brainstorm?
 ```
@@ -83,7 +83,7 @@ Invoke any skill directly when you need it:
 
 ### Resuming an interrupted pipeline
 
-If you close your terminal mid-pipeline, just invoke `/factory` again.
+If you close your terminal mid-pipeline, just invoke `/genesis` again.
 It reads `.factory/state.json` and offers to resume where you left off.
 
 ## How It Works
@@ -92,7 +92,7 @@ It reads `.factory/state.json` and offers to resume where you left off.
 
 Every skill updates `.factory/state.json` on invocation and completion,
 even when invoked standalone. This keeps pipeline state consistent and
-lets `/factory` know what has been done.
+lets `/genesis` know what has been done.
 
 ### Deployment environments
 

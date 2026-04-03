@@ -20,7 +20,7 @@
 - Net reduction: ~394 lines of duplicated content eliminated
 
 ### CLAUDE.md Ownership Transfer (PR #25)
-- `/factory` now owns process-rules sections of target project CLAUDE.md
+- `/genesis` now owns process-rules sections of target project CLAUDE.md
   (bootstrap and claim modes)
 - `/spec` now appends project-specific sections only (with standalone
   fallback for backward compatibility)

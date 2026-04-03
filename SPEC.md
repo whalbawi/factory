@@ -12,7 +12,7 @@
   designed for adoption by any engineer.
 - **Success criteria**:
 
-  - A user can invoke `/factory` and be guided through every phase from idea to deployed
+  - A user can invoke `/genesis` and be guided through every phase from idea to deployed
     product
   - Each sub-skill (`/ideation`, `/spec`, `/prototype`, `/setup`, `/build`, `/retro`, `/qa`,
     `/security`, `/deploy`) is independently invokable and produces well-defined outputs
@@ -22,19 +22,19 @@
   - A user with no prior Factory experience can follow the workflow by reading skill
     instructions alone
   - Every skill updates `.factory/state.json` on invocation and completion, even when
-    invoked standalone (not via `/factory`)
+    invoked standalone (not via `/genesis`)
 
 ## Scope
 
 ### In scope (v1)
 
-1. **`/factory` orchestrator skill** — Entry point that drives the full pipeline. Presents
+1. **`/genesis` orchestrator skill** — Entry point that drives the full pipeline. Presents
    each phase, invokes the corresponding sub-skill, collects output, confirms with user
    before proceeding. Tracks pipeline state so the user can resume if interrupted. Supports
    backward navigation — the user can jump back to any prior phase if a gap or issue is
    discovered later in the pipeline.
 
-   - *Example*: User types `/factory`. Claude asks "Do you have an existing idea or want to
+   - *Example*: User types `/genesis`. Claude asks "Do you have an existing idea or want to
      brainstorm?" Based on answer, routes to `/ideation` or `/spec`. After spec completes,
      asks "Ready to prototype?" and invokes `/prototype`. Continues through the pipeline.
    - *Backward navigation*: If during `/build` a spec gap is discovered, the user can jump
@@ -47,7 +47,7 @@
      for later resumption.
    - *Error behavior*: If a sub-skill fails or the user rejects its output, the orchestrator
      loops on that phase rather than advancing.
-   - *Claim mode*: `/factory claim` deeply reads an existing codebase, infers which
+   - *Claim mode*: `/genesis claim` deeply reads an existing codebase, infers which
      pipeline phases are already satisfied, writes `.factory/state.json` with
      confidence-tagged phase statuses (`completed`, `partial`, `pending`), and proposes a
      `CLAUDE.md` tailored to the project. Claim is the on-ramp for existing projects. It
@@ -179,7 +179,7 @@
 - **State tracking from day 1**: Every skill updates `.factory/state.json` on invocation
   (setting `status: "in_progress"` and `started_at`) and on completion (setting
   `status: "completed"` and `completed_at`). This applies even when a skill is invoked
-  standalone outside the `/factory` orchestrator. If `.factory/state.json` does not exist,
+  standalone outside the `/genesis` orchestrator. If `.factory/state.json` does not exist,
   the skill creates it. This ensures pipeline state is always accurate regardless of how
   skills are used.
 
@@ -225,7 +225,7 @@
 
 **Scenario: Greenfield product, full pipeline**
 
-1. User invokes `/factory` with no prior context
+1. User invokes `/genesis` with no prior context
 2. Orchestrator detects greenfield, asks "Do you have an idea or want to brainstorm?"
 3. User says "I have an idea for a habit tracker"
 4. Orchestrator invokes `/ideation` to explore the idea space — user refines to "CLI habit
@@ -259,9 +259,9 @@
 
 **Scenario: Mid-pipeline interruption and resumption**
 
-1. User runs `/factory`, completes through `/setup`
+1. User runs `/genesis`, completes through `/setup`
 2. User closes terminal, comes back the next day
-3. User invokes `/factory` again
+3. User invokes `/genesis` again
 4. Orchestrator reads pipeline state file, detects `/setup` completed, asks "You left off
    after setup. Ready to start building?"
 5. User confirms. Pipeline resumes at `/build`.
@@ -269,7 +269,7 @@
 **Scenario: Skipping phases**
 
 1. User already has a spec (wrote it manually or ran `/spec` independently)
-2. User invokes `/factory`
+2. User invokes `/genesis`
 3. Orchestrator detects `SPEC.md` exists, asks "I see an existing spec. Want to use it, or
    start fresh?"
 4. User says "use it." Orchestrator skips `/ideation` and `/spec`, proceeds to `/prototype`.
@@ -299,12 +299,12 @@
 3. `/qa` records `status: "in_progress"` and `started_at` in state
 4. `/qa` runs its full workflow, produces `QA-REPORT.md`
 5. `/qa` records `status: "completed"` and `completed_at` in state
-6. If the user later invokes `/factory`, the orchestrator sees `/qa` was already completed
+6. If the user later invokes `/genesis`, the orchestrator sees `/qa` was already completed
 
 **Scenario: Claiming an existing project**
 
 1. User has a Node.js/Express project with CI, tests, and Fly.io deployment
-2. User invokes `/factory claim`
+2. User invokes `/genesis claim`
 3. Orchestrator enters claim mode, reads package.json, CI config, fly.toml, test files,
    directory structure, .env.example
 4. Findings are classified by confidence: "Test command: `npm test`" (high — confirmed in
@@ -318,7 +318,7 @@
 7. User reviews, asks to add a section about the database migration workflow
 8. Orchestrator incorporates feedback, presents updated CLAUDE.md
 9. User confirms. CLAUDE.md is written, state.json finalized with `claimed: true`
-10. User later runs `/factory` — orchestrator reads state, offers to continue from the
+10. User later runs `/genesis` — orchestrator reads state, offers to continue from the
     build phase
 
 ## Data Model
@@ -332,7 +332,7 @@ project repository. No database, no external state.
 - **Format**: JSON
 - **Content**: Current phase, phase completion timestamps, user decisions at each handoff
   point, stale markers for phases invalidated by backward navigation, claim metadata
-  (when project was onboarded via `/factory claim`)
+  (when project was onboarded via `/genesis claim`)
 - **Ownership**: Every skill reads and writes this file. The orchestrator manages phase
   transitions, but standalone skill invocations also update their own phase entry. If the
   file does not exist, any skill that runs will create it.
@@ -408,13 +408,13 @@ project repository. No database, no external state.
   ```
 
 - **Phase status values**: `pending`, `in_progress`, `completed`, `skipped`, `partial`.
-  The `partial` status is used exclusively by `/factory claim` to indicate that a phase
+  The `partial` status is used exclusively by `/genesis claim` to indicate that a phase
   has some artifacts present but is not fully satisfied. Normal pipeline execution does
   not produce `partial` — phases are either completed or not. Skills reading state should
   treat `partial` the same as `pending` for gating purposes (check for required input
   files, not phase status).
 
-- **Claim-specific fields**: When a project is onboarded via `/factory claim`, the state
+- **Claim-specific fields**: When a project is onboarded via `/genesis claim`, the state
   file includes additional top-level fields:
 
   - `claimed` (boolean) — whether claim completed successfully
@@ -441,7 +441,7 @@ project repository. No database, no external state.
 | `/qa` | `QA-REPORT.md` |
 | `/security` | `SECURITY.md` |
 | `/deploy` | `DEPLOY-RECEIPT.md` |
-| `/factory claim` | `.factory/state.json` (always), `CLAUDE.md` (user-confirmed) |
+| `/genesis claim` | `.factory/state.json` (always), `CLAUDE.md` (user-confirmed) |
 | `/monitor` (v1.1) | `MONITOR-REPORT.md` |
 
 ### Skill Files (the Framework Itself)
@@ -511,7 +511,7 @@ project repository. No database, no external state.
   OpenTelemetry.
 - **State tracking**: Every skill must read and update `.factory/state.json` on invocation
   and completion. This is non-negotiable — state must be maintained regardless of whether
-  the skill is invoked via `/factory` or standalone.
+  the skill is invoked via `/genesis` or standalone.
 
 ## Domain Decomposition
 
@@ -522,7 +522,7 @@ logical groups that share conventions and interfaces:
 
 #### orchestration
 
-- **Owns**: `/factory` orchestrator skill — pipeline sequencing, state management, phase
+- **Owns**: `/genesis` orchestrator skill — pipeline sequencing, state management, phase
   transitions (forward and backward), resumption
 - **Tech stack**: Claude Code skill (markdown)
 - **Build order**: Can start after `core-skills` contracts are defined (needs to know what
@@ -548,9 +548,9 @@ logical groups that share conventions and interfaces:
   | `/qa` | `specs/SPEC-qa.md` |
   | `/security` | `specs/SPEC-security.md` |
   | `/deploy` | `specs/SPEC-deploy.md` |
-  | `/factory` | `specs/SPEC-orchestration.md` |
-  | `/factory claim` | `specs/SPEC-claim.md` |
-  | `/factory settings` | `specs/SPEC-settings.md` |
+  | `/genesis` | `specs/SPEC-orchestration.md` |
+  | `/genesis claim` | `specs/SPEC-claim.md` |
+  | `/genesis settings` | `specs/SPEC-settings.md` |
   | `/spec` | `specs/SPEC-spec.md` |
   | `/monitor` (v1.1) | `specs/SPEC-monitor.md` |
 
@@ -671,8 +671,8 @@ skill clarity, help text, anti-patterns, naming conventions, and documentation.
 | Backward navigation resets downstream phases | When jumping back, later phases are set to `pending` with `stale: true`. Outputs preserved on disk for reference. Simplest safe behavior. | Yes |
 | State tracking from day 1 | Every skill updates `.factory/state.json` on invocation and completion, even standalone. Ensures pipeline state is always accurate. | No |
 | Per-skill spec files | Individual spec files (`specs/SPEC-{skill}.md`) instead of monolithic `SPEC-core-skills.md`. Easier to navigate, review, and update independently. | Yes |
-| `partial` phase status for claim mode | Existing projects often have incomplete phase coverage (CI but no deploy). `partial` is written only by `/factory claim`, not by normal pipeline execution. Skills treat `partial` as `pending` for gating. | Yes |
-| Claim mode is inline in orchestrator | `/factory claim` is a mode of `/factory`, not a separate skill. Claim logic runs inside the orchestrator because it is not a pipeline phase — it is a pre-pipeline onboarding step. | No |
+| `partial` phase status for claim mode | Existing projects often have incomplete phase coverage (CI but no deploy). `partial` is written only by `/genesis claim`, not by normal pipeline execution. Skills treat `partial` as `pending` for gating. | Yes |
+| Claim mode is inline in orchestrator | `/genesis claim` is a mode of `/genesis`, not a separate skill. Claim logic runs inside the orchestrator because it is not a pipeline phase — it is a pre-pipeline onboarding step. | No |
 | Claim does not execute code | Claim reads artifacts but never runs test suites, build commands, or deploy checks. Side-effect-free analysis only. Test execution is `/qa`'s job. | No |
 | Claim proposes CLAUDE.md, never auto-writes | Claim always presents proposed CLAUDE.md content to the user and requires explicit confirmation before writing. Respects existing CLAUDE.md files. | No |
 
@@ -687,7 +687,7 @@ skill clarity, help text, anti-patterns, naming conventions, and documentation.
 
 - **Requires experimentation**:
 
-  - How does the `/factory` orchestrator actually trigger sub-skills? Options: (a) embed
+  - How does the `/genesis` orchestrator actually trigger sub-skills? Options: (a) embed
     sub-skill instructions inline in the orchestrator prompt, (b) instruct the user to type
     the sub-skill command, (c) use the Agent tool to spawn a sub-agent with the sub-skill's
     instructions. Option (c) is most robust but most expensive. Recommend (c) for agentic
@@ -748,7 +748,7 @@ skill clarity, help text, anti-patterns, naming conventions, and documentation.
 
 ### Open Items for User
 
-1. **Skill invocation mechanism**: How does the `/factory` orchestrator actually trigger
+1. **Skill invocation mechanism**: How does the `/genesis` orchestrator actually trigger
    sub-skills? Options: (a) embed sub-skill instructions inline in the orchestrator prompt,
    (b) instruct the user to type the sub-skill command, (c) use the Agent tool to spawn a
    sub-agent with the sub-skill's instructions. Option (c) is most robust but most

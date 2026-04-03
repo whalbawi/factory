@@ -9,7 +9,7 @@ concerns (coverage targets, test commands, code conventions) belong in the proje
 
 ## Global Settings
 
-Settings that apply across multiple skills. Declared in `/factory`'s configuration and
+Settings that apply across multiple skills. Declared in `/genesis`'s configuration and
 inherited by all skills that reference them.
 
 ### open_report
@@ -35,7 +35,7 @@ inherited by all skills that reference them.
 - **Default**: `true`
 - **Description**: Require explicit user confirmation before advancing to the next
   pipeline phase. When false, the orchestrator auto-advances after verifying outputs.
-- **Used by**: `/factory`
+- **Used by**: `/genesis`
 
 ### parallel_domain_agents
 
@@ -58,7 +58,7 @@ inherited by all skills that reference them.
 
 ## Per-Skill Settings
 
-### /factory (orchestrator)
+### /genesis (orchestrator)
 
 ```yaml
 settings:
@@ -83,7 +83,7 @@ settings:
     values: ["prompt", "auto", "skip"]
     default: "prompt"
     description: >
-      Controls CLAUDE.md behavior during /factory claim. "prompt" asks the
+      Controls CLAUDE.md behavior during /genesis claim. "prompt" asks the
       user before writing; "auto" writes without confirmation; "skip" never
       writes CLAUDE.md during claim.
 ```

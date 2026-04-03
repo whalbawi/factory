@@ -7,7 +7,7 @@ software products from idea to production. It formalizes the ad-hoc process of u
 to build software into a repeatable, systematic pipeline: ideation, specification,
 prototyping, setup, build, retro, QA, security, deploy, and monitor. Each phase is a
 standalone Claude Code skill that can be invoked independently or orchestrated by the
-`/factory` skill.
+`/genesis` skill.
 
 The "product" is a set of markdown skill files with YAML frontmatter, their contracts
 (inputs/outputs), and the conventions they enforce. The existing `/spec` skill at
@@ -24,7 +24,7 @@ ensuring pipeline continuity regardless of how a skill is invoked.
 
 **Components:**
 
-- **`/factory` orchestrator**: Pipeline sequencing, state management in
+- **`/genesis` orchestrator**: Pipeline sequencing, state management in
   `.factory/state.json`, phase transitions with user confirmation, resumption after
   interruption. Supports both forward progression and backward navigation to revisit
   earlier phases.
@@ -101,7 +101,7 @@ Skills are markdown instructions, not executable code. Quality is verified throu
 
 ## Key Features
 
-- Full pipeline orchestration from idea to deployed product (`/factory`):
+- Full pipeline orchestration from idea to deployed product (`/genesis`):
   `/ideation` -> `/spec` -> `/prototype` -> `/setup` -> `/build` -> `/retro` -> `/qa`
   -> `/security` -> `/deploy`
 - Independent skill invocation for any phase
