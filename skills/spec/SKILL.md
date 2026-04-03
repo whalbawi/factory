@@ -5,23 +5,38 @@ description: Use when the user asks to "spec out a project", "write a spec", "cl
 
 # Spec: Product Discovery, Specification & Agent Team Orchestration
 
-Turn a user's idea into a spec dense enough for Claude to autonomously build, test, and ship the product. Complex products are decomposed into bounded domains, then a fixed team of specialist agents — orchestrated by a Software Architect — produces detailed specs across every domain in parallel.
+Turn a user's idea into a spec dense enough for Claude to autonomously build,
+test, and ship the product. Complex products are decomposed into bounded
+domains, then a fixed team of specialist agents — orchestrated by a Software
+Architect — produces detailed specs across every domain in parallel.
 
 ## Agent Team
 
-Every project gets the same team. The Architect decides which agents are active per domain based on relevance.
+Every project gets the same team. The Architect decides which agents are
+active per domain based on relevance.
 
 ### Top-Level Claude (User-Facing)
 
-The top-level Claude runs in the main conversation with the user. It handles Discovery (Phase 1) and Validation (Phase 3). After discovery is complete, it launches the Architect agent with the collected context and waits for it to finish before presenting results to the user.
+The top-level Claude runs in the main conversation with the user. It handles
+Discovery (Phase 1) and Validation (Phase 3). After discovery is complete, it
+launches the Architect agent with the collected context and waits for it to
+finish before presenting results to the user.
 
 ### Software Architect (Orchestrator Agent)
 
-A separate agent launched via the Agent tool. The Architect receives the discovery context from top-level Claude and handles everything else: writes the master spec (Phase 2), decomposes domains, assigns agents, launches specialist agents in batches, runs peer review, performs the final review pass, generates `CLAUDE.md`, and writes the architect review. The Architect has full authority to edit any spec file and is the tiebreaker when agents disagree.
+A separate agent launched via the Agent tool. The Architect receives the
+discovery context from top-level Claude and handles everything else: writes
+the master spec (Phase 2), decomposes domains, assigns agents, launches
+specialist agents in batches, runs peer review, performs the final review
+pass, generates `CLAUDE.md`, and writes the architect review. The Architect
+has full authority to edit any spec file and is the tiebreaker when agents
+disagree.
 
 ### Specialist Agents
 
-These agents are launched by the Architect via the Agent tool as parallel subagents. Each operates within a scoped context: one domain + one specialty. Multiple agents can run in parallel across domains and within the same domain.
+These agents are launched by the Architect via the Agent tool as parallel
+subagents. Each operates within a scoped context: one domain + one specialty.
+Multiple agents can run in parallel across domains and within the same domain.
 
 | Agent | Responsibility |
 |---|---|
@@ -35,7 +50,8 @@ These agents are launched by the Architect via the Agent tool as parallel subage
 
 ### Agent Assignment Rules
 
-Not every agent is needed for every domain. The Architect assigns agents per domain using these heuristics:
+Not every agent is needed for every domain. The Architect assigns agents per
+domain using these heuristics:
 
 | Domain type | Always assign | Assign if relevant | Rarely needed |
 |---|---|---|---|
@@ -47,35 +63,63 @@ Not every agent is needed for every domain. The Architect assigns agents per dom
 | Infrastructure | DevOps, Security | QA | Backend, Frontend, Product Design, Tech Writing |
 | Full-stack (entire system) | All | — | — |
 
-The Architect documents agent assignments in the master spec's Domain Decomposition section.
+The Architect documents agent assignments in the master spec's Domain
+Decomposition section.
 
 ---
 
 ## Process Overview
 
-1. **Discovery** — Top-level Claude understands the user's vision through adaptive conversation
-2. **Architect Orchestration** — Top-level Claude launches the Architect agent, which runs Phases 2a–2e:
+1. **Discovery** — Top-level Claude understands the user's vision through
+   adaptive conversation
+2. **Architect Orchestration** — Top-level Claude launches the Architect
+   agent, which runs Phases 2a–2e:
    - 2a. **Synthesis** — Architect produces the structured master spec
-   - 2b. **Decomposition** — Architect identifies domains, defines contracts, assigns agents *(skip for trivially simple projects)*
-   - 2c. **Agent Spec Generation** — Architect fans out specialist agents (parallel within and across domains)
-   - 2d. **Peer Review & Revision** — Agents read each other's specs, critique, and update their own (all in parallel)
-   - 2e. **Architect Final Review & CLAUDE.md** — Architect reads everything, resolves disputes, generates `CLAUDE.md`
-3. **Validation** — Top-level Claude presents results to user for confirmation
+   - 2b. **Decomposition** — Architect identifies domains, defines contracts,
+     assigns agents *(skip for trivially simple projects)*
+   - 2c. **Agent Spec Generation** — Architect fans out specialist agents
+     (parallel within and across domains)
+   - 2d. **Peer Review & Revision** — Agents read each other's specs,
+     critique, and update their own (all in parallel)
+   - 2e. **Architect Final Review & CLAUDE.md** — Architect reads everything,
+     resolves disputes, generates `CLAUDE.md`
+3. **Validation** — Top-level Claude presents results to user for
+   confirmation
 
 ---
 
 ## Phase 1: Discovery
 
-The goal of Discovery is to produce a **coherent, internally consistent product vision** — not to transcribe whatever the user says. Top-level Claude acts as a critical thinking partner: it pressure-tests ideas, flags contradictions, refuses to move forward on vague foundations, and pushes back when answers don't hold up. A spec built on hand-wavy inputs produces hand-wavy output. Discovery is where rigor starts.
+The goal of Discovery is to produce a **coherent, internally consistent
+product vision** — not to transcribe whatever the user says. Top-level Claude
+acts as a critical thinking partner: it pressure-tests ideas, flags
+contradictions, refuses to move forward on vague foundations, and pushes back
+when answers don't hold up. A spec built on hand-wavy inputs produces
+hand-wavy output. Discovery is where rigor starts.
 
 ### Mindset
 
-- **You are not a stenographer.** Your job is to understand the product well enough to build it, not to record what the user said. If something doesn't make sense, say so.
-- **Push back.** If the user gives a vague answer ("it should be fast", "standard auth", "nice UI"), do not accept it. Ask what "fast" means in numbers. Ask which auth flow. Ask what "nice" looks like concretely. Vague inputs produce vague specs.
-- **Name contradictions immediately.** If the user says "simple MVP" but describes 15 features, call it out. If they want "real-time" but also "serverless with cold starts", surface the tension. Do not silently collect conflicting requirements.
-- **Say no.** If scope is unrealistic, if the tech choice doesn't fit the problem, if the user is solving the wrong problem — say so directly with reasoning. Propose an alternative. Being agreeable is not being helpful.
-- **Demand specifics.** "What happens when X fails?" is always a valid question. "Walk me through exactly what the user sees" is always a valid request. Abstractions are not requirements.
-- **Hold the line on coherence.** Every answer must fit with every other answer. When a new piece of information contradicts an earlier one, stop and resolve it before continuing. Do not accumulate contradictions hoping they'll sort themselves out later.
+- **You are not a stenographer.** Your job is to understand the product well
+  enough to build it, not to record what the user said. If something doesn't
+  make sense, say so.
+- **Push back.** If the user gives a vague answer ("it should be fast",
+  "standard auth", "nice UI"), do not accept it. Ask what "fast" means in
+  numbers. Ask which auth flow. Ask what "nice" looks like concretely. Vague
+  inputs produce vague specs.
+- **Name contradictions immediately.** If the user says "simple MVP" but
+  describes 15 features, call it out. If they want "real-time" but also
+  "serverless with cold starts", surface the tension. Do not silently collect
+  conflicting requirements.
+- **Say no.** If scope is unrealistic, if the tech choice doesn't fit the
+  problem, if the user is solving the wrong problem — say so directly with
+  reasoning. Propose an alternative. Being agreeable is not being helpful.
+- **Demand specifics.** "What happens when X fails?" is always a valid
+  question. "Walk me through exactly what the user sees" is always a valid
+  request. Abstractions are not requirements.
+- **Hold the line on coherence.** Every answer must fit with every other
+  answer. When a new piece of information contradicts an earlier one, stop
+  and resolve it before continuing. Do not accumulate contradictions hoping
+  they'll sort themselves out later.
 
 ### Calibrate Depth
 
@@ -87,68 +131,114 @@ Assess the user's starting point from their first message and pick a track:
 | Partial concept ("CLI tool that syncs dotfiles across machines") | **Focused discovery** — clarify core, probe edges | 3–6 |
 | Detailed vision ("React dashboard with auth, these 5 endpoints...") | **Fast-path** — challenge assumptions, fill gaps, confirm | 1–3 |
 
-Even on the fast-path, do not rubber-stamp. A detailed description is not necessarily a coherent one. Probe for contradictions, missing error handling, and unstated assumptions.
+Even on the fast-path, do not rubber-stamp. A detailed description is not
+necessarily a coherent one. Probe for contradictions, missing error handling,
+and unstated assumptions.
 
 ### Discovery Areas
 
-These are not sequential steps. They are **dimensions of understanding**. Every user response potentially updates multiple dimensions. After each response, reassess which dimension has the most uncertainty and probe there next.
+These are not sequential steps. They are **dimensions of understanding**.
+Every user response potentially updates multiple dimensions. After each
+response, reassess which dimension has the most uncertainty and probe there
+next.
 
 **Problem & Purpose**
+
 - What problem does this solve? What's the current workaround?
-- What does success look like concretely — not "users are happy" but observable, testable outcomes?
-- Why does this need to exist? Is there an existing tool that already does this? If so, what's specifically wrong with it?
+- What does success look like concretely — not "users are happy" but
+  observable, testable outcomes?
+- Why does this need to exist? Is there an existing tool that already does
+  this? If so, what's specifically wrong with it?
 
 **Users & Context**
+
 - Who uses it? What's their technical level?
 - Is there an existing codebase, repo, or system this extends?
-- How many users? 1, 10, 1000, 1M? This changes everything about the architecture.
+- How many users? 1, 10, 1000, 1M? This changes everything about the
+  architecture.
 
 **Core Functionality**
+
 - What are the 3–5 most important actions?
-- For each: trigger → input → expected output. No exceptions — if the user can't describe the input and output, the feature isn't understood well enough.
-- What is explicitly out of scope? Push for this — unbounded scope is the #1 spec killer.
-- What's the single most important thing this product does? If you had to ship only one feature, which one?
+- For each: trigger → input → expected output. No exceptions — if the user
+  can't describe the input and output, the feature isn't understood well
+  enough.
+- What is explicitly out of scope? Push for this — unbounded scope is the #1
+  spec killer.
+- What's the single most important thing this product does? If you had to
+  ship only one feature, which one?
 
 **Platform & Stack**
+
 - Form factor: CLI, web app, API, library, desktop app, extension, bot, etc.
-- Tech stack preferences or mandates — and *why*. "I like React" is different from "the team has 3 years of React experience." Challenge arbitrary choices.
+- Tech stack preferences or mandates — and *why*. "I like React" is different
+  from "the team has 3 years of React experience." Challenge arbitrary
+  choices.
 - OS/environment constraints, offline requirements
 
 **Data & State**
+
 - What's stored? Where? Who owns it?
 - Privacy, compliance, or sensitivity concerns?
-- What's the source of truth? If there are multiple data stores, how do they stay consistent?
+- What's the source of truth? If there are multiple data stores, how do they
+  stay consistent?
 
 **Integrations**
+
 - External services, APIs, auth requirements
 - Interop with existing tools or workflows
-- What happens when an external dependency is down? This is not optional — every integration needs a failure mode.
+- What happens when an external dependency is down? This is not optional —
+  every integration needs a failure mode.
 
 **Hard Constraints**
+
 - Performance/latency/throughput targets — in numbers, not adjectives
 - Budget, timeline, licensing, regulatory mandates
-- Non-negotiable technical requirements (must run offline, must be single binary, etc.)
+- Non-negotiable technical requirements (must run offline, must be single
+  binary, etc.)
 
 **Complexity Assessment** *(informs decomposition and agent assignment)*
-- How many distinct technical concerns are there? (UI, API, storage, auth, infra, data pipeline, ML, etc.)
-- Are there natural ownership boundaries where one part could be built independently?
+
+- How many distinct technical concerns are there? (UI, API, storage, auth,
+  infra, data pipeline, ML, etc.)
+- Are there natural ownership boundaries where one part could be built
+  independently?
 - Which specialist agents will be needed and where?
 
 Ask **1–3 questions per message**. Skip areas the user has already addressed.
 
 ### Techniques
 
-**Concrete over abstract.** When answers are vague, ask for a specific scenario: "Walk me through a typical session from open to close." One good scenario is worth five abstract requirement statements. If the user can't walk through a scenario, the feature isn't ready to spec.
+**Concrete over abstract.** When answers are vague, ask for a specific
+scenario: "Walk me through a typical session from open to close." One good
+scenario is worth five abstract requirement statements. If the user can't
+walk through a scenario, the feature isn't ready to spec.
 
-**Propose and react.** When the user is stuck, offer a concrete option: "Would a single YAML config file work, or do you need per-project overrides?" Reacting to a proposal is easier than generating requirements from scratch. But be honest about tradeoffs — don't present the easy option without mentioning what it costs.
+**Propose and react.** When the user is stuck, offer a concrete option:
+"Would a single YAML config file work, or do you need per-project
+overrides?" Reacting to a proposal is easier than generating requirements
+from scratch. But be honest about tradeoffs — don't present the easy option
+without mentioning what it costs.
 
-**Playback.** Every 3–4 exchanges, summarize understanding in 2–3 sentences. Ask the user to confirm or correct. Catches drift early. Use playback aggressively when the conversation feels like it's meandering.
+**Playback.** Every 3–4 exchanges, summarize understanding in 2–3 sentences.
+Ask the user to confirm or correct. Catches drift early. Use playback
+aggressively when the conversation feels like it's meandering.
 
-**Challenge feasibility.** If what's described is impractical (scope too large for the platform, fundamental technical barriers, conflicting requirements), say so immediately. Propose a feasible alternative. Do not silently collect an infeasible spec. Be specific about *why* it's infeasible — "that would require X which conflicts with your constraint Y."
+**Challenge feasibility.** If what's described is impractical (scope too large
+for the platform, fundamental technical barriers, conflicting requirements),
+say so immediately. Propose a feasible alternative. Do not silently collect
+an infeasible spec. Be specific about *why* it's infeasible — "that would
+require X which conflicts with your constraint Y."
 
-**Expose hidden complexity.** Users routinely underestimate: auth, error handling, multi-tenancy, offline/sync, migrations, and "admin" features. When these are relevant, ask about them even if the user didn't bring them up. "You mentioned multiple users — how do you handle permissions?" is never a wasted question.
+**Expose hidden complexity.** Users routinely underestimate: auth, error
+handling, multi-tenancy, offline/sync, migrations, and "admin" features. When
+these are relevant, ask about them even if the user didn't bring them up.
+"You mentioned multiple users — how do you handle permissions?" is never a
+wasted question.
 
-**Cut scope proactively.** If the user describes more than what's realistic for a v1, say so. Propose what to cut and why. A focused product that ships beats an ambitious one that doesn't.
+**Cut scope proactively.** If the user describes more than what's realistic
+for a v1, say so. Propose what to cut and why. A focused product that ships
+beats an ambitious one that doesn't.
 
 ### Red Flags — Stop and Resolve
 
@@ -167,26 +257,36 @@ Do not proceed past Discovery if any of these are present:
 ### Exit Criteria
 
 Move to the Architect only when:
-- All core functionality is understood with **concrete input/output examples** — not descriptions, actual examples
+
+- All core functionality is understood with **concrete input/output
+  examples** — not descriptions, actual examples
 - Scope boundaries (in/out) are explicit and the user has confirmed them
 - Hard constraints are identified with specific numbers where applicable
 - Contradictions are resolved — not deferred, resolved
 - The product vision is coherent: every piece fits with every other piece
-- Remaining unknowns are implementation decisions the Architect can make autonomously, not product decisions
+- Remaining unknowns are implementation decisions the Architect can make
+  autonomously, not product decisions
 
-Announce the transition: "I have a clear picture. Handing off to the Architect to produce the spec."
+Announce the transition: "I have a clear picture. Handing off to the
+Architect to produce the spec."
 
 ---
 
 ## Phase 2: Architect Orchestration
 
-After Discovery, the top-level Claude launches the Architect agent with a single Agent tool call:
+After Discovery, the top-level Claude launches the Architect agent with a
+single Agent tool call:
 
 - **Name**: `architect`
 - **Mode**: `auto`
-- **Prompt**: Include all discovery context collected from the user (problem, users, core functionality, platform, data, integrations, constraints, complexity assessment). Instruct the Architect to execute Phases 2a–2e and return a summary of what was produced, any unresolved issues, and open questions for the user.
+- **Prompt**: Include all discovery context collected from the user (problem,
+  users, core functionality, platform, data, integrations, constraints,
+  complexity assessment). Instruct the Architect to execute Phases 2a–2e and
+  return a summary of what was produced, any unresolved issues, and open
+  questions for the user.
 
-The Architect runs autonomously from here. The top-level Claude waits for the Architect to return before proceeding to Phase 3 (Validation).
+The Architect runs autonomously from here. The top-level Claude waits for the
+Architect to return before proceeding to Phase 3 (Validation).
 
 ---
 
@@ -194,7 +294,8 @@ The Architect runs autonomously from here. The top-level Claude waits for the Ar
 
 Write the spec to `SPEC.md` in the working directory.
 
-Adapt to the product. Omit sections that don't apply. Add sections the product demands.
+Adapt to the product. Omit sections that don't apply. Add sections the
+product demands.
 
 ### Master Spec Structure
 
@@ -279,11 +380,16 @@ Unresolved items with disposition:
 ### Writing Principles
 
 - **Dense, not verbose.** Every sentence should carry information. No filler.
-- **Concrete over general.** "Accepts `--format json|csv|table`, defaults to `table`" beats "supports multiple output formats."
-- **Priority is load-bearing.** The ordered in-scope list tells agents what to protect and what to sacrifice under pressure.
-- **Distinguish requirement strength.** "must" (hard), "should" (strong preference), "could" (nice-to-have).
-- **Examples are requirements.** A sample input/output pair is a concrete, testable contract.
-- **Reference existing context.** If there's an existing repo or system, reference it by name/path.
+- **Concrete over general.** "Accepts `--format json|csv|table`, defaults to
+  `table`" beats "supports multiple output formats."
+- **Priority is load-bearing.** The ordered in-scope list tells agents what
+  to protect and what to sacrifice under pressure.
+- **Distinguish requirement strength.** "must" (hard), "should" (strong
+  preference), "could" (nice-to-have).
+- **Examples are requirements.** A sample input/output pair is a concrete,
+  testable contract.
+- **Reference existing context.** If there's an existing repo or system,
+  reference it by name/path.
 
 ---
 
@@ -292,6 +398,7 @@ Unresolved items with disposition:
 ### Identifying Domains
 
 A domain is a bounded area of concern that:
+
 - Can be built and tested semi-independently
 - Has a well-defined interface surface to other domains
 - Maps to a coherent technical concern
@@ -376,21 +483,26 @@ The Architect produces an explicit assignment table in the master spec:
 Within each batch, all agent calls execute in parallel.
 ```
 
-The execution plan respects both domain dependency order (topological sort) and maximizes parallelism within each batch.
+The execution plan respects both domain dependency order (topological sort)
+and maximizes parallelism within each batch.
 
 ---
 
 ### Phase 2c: Agent Spec Generation
 
-The Architect launches specialist agents using the Agent tool, following the execution plan's batch order. All agents within a batch run in parallel. Each agent writes its section of `specs/SPEC-{domain}.md` directly.
+The Architect launches specialist agents using the Agent tool, following the
+execution plan's batch order. All agents within a batch run in parallel. Each
+agent writes its section of `specs/SPEC-{domain}.md` directly.
 
-Each agent receives: the master spec, its domain context (ownership, contracts, shared definitions), and its role-specific instructions. Agents in later batches also receive the domain specs produced by earlier batches.
+Each agent receives: the master spec, its domain context (ownership,
+contracts, shared definitions), and its role-specific instructions. Agents in
+later batches also receive the domain specs produced by earlier batches.
 
 #### Agent Base Prompt
 
 Every agent receives this context, filled in by the Architect:
 
-```
+```text
 You are the {agent.role} specialist for the [{domain.name}] domain of a
 larger system. A Software Architect has defined the master spec and your
 assignment. Stay strictly within your role and domain scope.
@@ -429,7 +541,8 @@ master spec — reference it, extend it. Stay dense: no filler.
 #### Role-Specific Instructions
 
 **Backend**
-```
+
+```text
 Produce a domain spec covering:
 1. Internal architecture: components, modules, key abstractions. Name the
    structs/classes/modules.
@@ -442,7 +555,8 @@ Produce a domain spec covering:
 ```
 
 **Frontend**
-```
+
+```text
 Produce a domain spec covering:
 1. Component hierarchy: top-level layout, page components, shared components.
    Name them.
@@ -456,11 +570,12 @@ Produce a domain spec covering:
 ```
 
 **DevOps**
-```
+
+```text
 Produce a domain spec covering:
 1. Build pipeline: steps from commit to deployable artifact. Linting, testing,
    building, packaging.
-2. CI/CD: trigger conditions, environments (dev/staging/prod), promotion gates.
+2. CI/CD: trigger conditions, environments (alpha/staging/prod), promotion gates.
 3. Containerization: Dockerfile strategy, base images, multi-stage builds
    if applicable.
 4. Infrastructure: what's needed (compute, storage, networking, DNS, CDN).
@@ -468,10 +583,15 @@ Produce a domain spec covering:
 5. Monitoring and observability: what to measure, alerting thresholds,
    log aggregation.
 6. Environment configuration: secrets management, env vars, config files.
+7. Deployment environments: three-environment promotion model —
+   alpha (opt-in dev validation), staging (mirrors prod, promoted after QA),
+   prod (promoted after security + user confirmation). Separate configs,
+   separate secrets per environment.
 ```
 
 **Security**
-```
+
+```text
 Produce a domain spec covering:
 1. Threat model: enumerate attack surfaces for this domain. What can go wrong.
 2. Auth/authz: how identity and permissions are enforced within this domain.
@@ -483,7 +603,8 @@ Produce a domain spec covering:
 ```
 
 **QA**
-```
+
+```text
 Produce a domain spec covering:
 1. Test strategy: unit/integration/e2e split and rationale for this domain.
 2. Test plan: specific test cases derived from the domain's scenarios and
@@ -499,7 +620,8 @@ Produce a domain spec covering:
 ```
 
 **Product Design**
-```
+
+```text
 Produce a domain spec covering:
 1. Information architecture: what content and actions are exposed to the user
    in this domain. Hierarchy and grouping.
@@ -516,7 +638,8 @@ Produce a domain spec covering:
 ```
 
 **Tech Writing**
-```
+
+```text
 Produce a domain spec covering:
 1. Documentation inventory: what docs are needed for this domain (API
    reference, user guide, developer guide, CLI help, README section).
@@ -534,31 +657,41 @@ Produce a domain spec covering:
 
 ### Phase 2d: Peer Review & Revision
 
-After all batches complete, agents read each other's specs and revise their own. Each agent reviews specs from its own domain and adjacent domains sharing interface contracts. All review-revise agents run in parallel.
+After all batches complete, agents read each other's specs and revise their
+own. Each agent reviews specs from its own domain and adjacent domains
+sharing interface contracts. All review-revise agents run in parallel.
 
 Each agent:
-1. Identifies contradictions, gaps, interface mismatches, and self-corrections
+
+1. Identifies contradictions, gaps, interface mismatches, and
+   self-corrections
 2. Updates its section of `specs/SPEC-{domain}.md` in place
-3. Returns a summary of what it changed and what issues remain in other agents' specs
+3. Returns a summary of what it changed and what issues remain in other
+   agents' specs
 
 ---
 
 ### Phase 2e: Architect Final Review & CLAUDE.md
 
-The Architect reviews all domain specs and the review summaries. It checks for:
+The Architect reviews all domain specs and the review summaries. It checks
+for:
+
 - Unresolved contradictions between agents
 - Contract consistency across domain boundaries
 - Completeness of coverage for all assigned roles
 - Alignment with the master spec
 - Cross-cutting consistency (auth flows, error formats, naming conventions)
 
-The Architect edits any `specs/SPEC-{domain}.md` that needs fixing — it is the tiebreaker when agents disagree. Then it:
-- Appends an `## Architect Review` section to `SPEC.md` (issues found, resolutions, open questions)
+The Architect edits any `specs/SPEC-{domain}.md` that needs fixing — it is
+the tiebreaker when agents disagree. Then it:
+
+- Appends an `## Architect Review` section to `SPEC.md` (issues found,
+  resolutions, open questions)
 - Writes `CLAUDE.md` to the project root
 
 ### Output Structure
 
-```
+```text
 project/
 ├── CLAUDE.md
 ├── SPEC.md
@@ -569,9 +702,15 @@ project/
     └── SPEC-frontend.md
 ```
 
+The Architect also initializes `.factory/state.json` with the spec phase
+marked as `completed` and all output files listed.
+
 ### CLAUDE.md Generation
 
-After the final review, the Architect generates a `CLAUDE.md` file in the project root. This is the project's living source of truth for all agents that will build the product. The Architect derives it from the master spec and domain specs.
+After the final review, the Architect generates a `CLAUDE.md` file in the
+project root. This is the project's living source of truth for all agents
+that will build the product. The Architect derives it from the master spec
+and domain specs.
 
 #### CLAUDE.md Structure
 
@@ -621,6 +760,16 @@ The DevOps agent MUST routinely inspect GitHub Actions health:
   gate to fail.
 - **Pipeline hygiene**: Unused workflows, stale caches, and unnecessary steps
   must be cleaned up. CI should be fast and reliable.
+
+### CI Pipeline Inspection
+Every 5 PRs merged to main, the DevOps agent MUST audit the GitHub Actions
+pipeline:
+- **False positives**: Introduce a known bug or disable a feature and verify
+  the expected CI gate catches it.
+- **False negatives**: Investigate any intermittent failures, disabled checks,
+  or tests that pass trivially (would still pass if the code under test were
+  deleted).
+Results are documented in `PROGRESS-OPS.md`.
 
 ### Code Review Rigor
 Every PR must be reviewed with the assumption that bugs exist in it. Reviewers
@@ -682,6 +831,12 @@ MUST come up with an ordering that aims to minimize merge conflicts. The only
 allowed merge strategy is "rebase+merge". Once a PR is merged, notify the agent
 to clean up its worktree.
 
+### Mandatory Retro After Build
+After the build phase completes and all PRs are merged, the team MUST run
+`/retro` before proceeding to QA. This is not optional — it captures process
+learnings while they are fresh. The retro output (`RETRO-{date}.md`) is
+reviewed by the team lead before QA begins.
+
 ### Self-Updating Context (CLAUDE.md Auto-Amendment)
 CLAUDE.md MUST be amended whenever a learning or course correction occurs:
 - **Autonomous**: When any process/agent discovers something important during
@@ -714,10 +869,16 @@ relay. Route status updates and task completions through the team lead as usual.
 
 #### Generation Rules
 
-- **Derive, don't invent.** Every section must trace back to the master spec or domain specs. Do not add requirements not in the spec.
-- **Fill in concrete commands.** The test/lint/format sections must have actual runnable commands, derived from the tech stack choices in the spec. Do not leave placeholders.
-- **Agent table must match assignments.** The Progress Tracking table must list exactly the agents assigned in the master spec, with appropriate prefixes and scopes.
-- **Project name in worktree pattern.** Replace `[project]` with the actual project name.
+- **Derive, don't invent.** Every section must trace back to the master spec
+  or domain specs. Do not add requirements not in the spec.
+- **Fill in concrete commands.** The test/lint/format sections must have
+  actual runnable commands, derived from the tech stack choices in the spec.
+  Do not leave placeholders.
+- **Agent table must match assignments.** The Progress Tracking table must
+  list exactly the agents assigned in the master spec, with appropriate
+  prefixes and scopes.
+- **Project name in worktree pattern.** Replace `[project]` with the actual
+  project name.
 
 ---
 
@@ -726,6 +887,7 @@ relay. Route status updates and task completions through the team lead as usual.
 ### For Single-Domain Projects
 
 Present the spec and direct attention to:
+
 1. **Priority check**: "Here's the priority order. Does this ranking match?"
 2. **Assumption review**: Reference the Decision Log.
 3. **Open questions**: Resolve items marked "requires user input."
@@ -735,13 +897,21 @@ Present the spec and direct attention to:
 ### For Multi-Domain Projects
 
 All of the above, plus:
-6. **Domain boundary review**: "Here's how I split the system. Do these ownership lines make sense?"
-7. **Contract review**: "These are the interfaces between domains. Shapes correct? Anything missing?"
-8. **Agent output review**: Present each domain's spec suite. Highlight what changed during peer review and what the Architect corrected.
-9. **Architect review summary**: Walk through the Architect Review section of `SPEC.md` — what was caught, what was fixed, what needs user input.
-10. **Final integration review**: "Here's how the pieces fit together. Does the full picture match your vision?"
 
-Iterate until confirmed. Update spec files in place with each revision. Re-launch affected agents if master spec changes affect domain assignments or contracts.
+6. **Domain boundary review**: "Here's how I split the system. Do these
+   ownership lines make sense?"
+7. **Contract review**: "These are the interfaces between domains. Shapes
+   correct? Anything missing?"
+8. **Agent output review**: Present each domain's spec suite. Highlight what
+   changed during peer review and what the Architect corrected.
+9. **Architect review summary**: Walk through the Architect Review section of
+   `SPEC.md` — what was caught, what was fixed, what needs user input.
+10. **Final integration review**: "Here's how the pieces fit together. Does
+    the full picture match your vision?"
+
+Iterate until confirmed. Update spec files in place with each revision.
+Re-launch affected agents if master spec changes affect domain assignments
+or contracts.
 
 ---
 
@@ -754,16 +924,61 @@ Iterate until confirmed. Update spec files in place with each revision. Re-launc
 
 ---
 
+## State Tracking
+
+On start, completion, or failure, the spec skill updates
+`.factory/state.json` to record its phase status. If `.factory/` or
+`state.json` do not exist, create them. Always merge into existing state —
+never overwrite other phases.
+
+- **On start**: Set the `spec` phase to `in_progress`.
+- **On completion**: Set the `spec` phase to `completed` and include a list
+  of all output files produced (e.g., `SPEC.md`, `CLAUDE.md`,
+  `specs/SPEC-*.md`).
+- **On failure**: Set the `spec` phase to `failed` and include a `reason`
+  describing what went wrong.
+
+Example state after successful completion:
+
+```json
+{
+  "phases": {
+    "spec": {
+      "status": "completed",
+      "outputs": ["SPEC.md", "CLAUDE.md", "specs/SPEC-api.md", "specs/SPEC-frontend.md"]
+    }
+  }
+}
+```
+
+---
+
 ## Anti-Patterns
 
-- **Don't interrogate.** If the user clearly knows what they want, accept it and move on.
-- **Don't front-load.** Never dump all questions in one message. This is a conversation.
-- **Don't cargo-cult.** No "As a user, I want X so that Y" unless requested. Concrete scenarios are more useful.
-- **Don't defer everything.** When either choice is fine, pick one and document it in the Decision Log.
-- **Don't spec implementation in the master spec.** The master spec captures *what* and *why*. Agent specs go deeper into *how* within their scoped (domain, role) cell.
-- **Don't ignore the repo.** If the user has existing code, the spec should reference it.
-- **Don't decompose prematurely.** A project that fits in one agent's head should stay as one spec.
-- **Don't hand-wave contracts.** `GET /api/tasks?status=active → { tasks: Task[], cursor: string }` is a contract. "The frontend calls the API" is not.
-- **Don't assign agents blindly.** A pure backend service doesn't need a Product Design agent. The Architect's job is to assign agents where they add value, not to run every agent everywhere.
-- **Don't ignore cross-domain consistency.** The whole point of the Architect role is to catch integration issues that no single agent can see. Always run the consistency check.
-- **Don't skip re-generation.** When the master spec changes materially (new domain, changed contracts), re-launch affected agents. Stale domain specs are worse than no domain specs.
+- **Don't interrogate.** If the user clearly knows what they want, accept it
+  and move on.
+- **Don't front-load.** Never dump all questions in one message. This is a
+  conversation.
+- **Don't cargo-cult.** No "As a user, I want X so that Y" unless requested.
+  Concrete scenarios are more useful.
+- **Don't defer everything.** When either choice is fine, pick one and
+  document it in the Decision Log.
+- **Don't spec implementation in the master spec.** The master spec captures
+  *what* and *why*. Agent specs go deeper into *how* within their scoped
+  (domain, role) cell.
+- **Don't ignore the repo.** If the user has existing code, the spec should
+  reference it.
+- **Don't decompose prematurely.** A project that fits in one agent's head
+  should stay as one spec.
+- **Don't hand-wave contracts.**
+  `GET /api/tasks?status=active → { tasks: Task[], cursor: string }` is a
+  contract. "The frontend calls the API" is not.
+- **Don't assign agents blindly.** A pure backend service doesn't need a
+  Product Design agent. The Architect's job is to assign agents where they
+  add value, not to run every agent everywhere.
+- **Don't ignore cross-domain consistency.** The whole point of the Architect
+  role is to catch integration issues that no single agent can see. Always
+  run the consistency check.
+- **Don't skip re-generation.** When the master spec changes materially (new
+  domain, changed contracts), re-launch affected agents. Stale domain specs
+  are worse than no domain specs.
