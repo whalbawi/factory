@@ -152,35 +152,9 @@ settings:
 
 ### /setup
 
-```yaml
-settings:
-  - name: deployment_platform
-    type: enum
-    values: ["flyio", "manual"]
-    default: "flyio"
-    description: >
-      Target deployment platform for infrastructure scaffolding. "flyio"
-      generates Fly.io configs, app provisioning, and fly.toml files.
-      "manual" skips platform-specific infra and documents deployment as
-      a manual step.
-
-  - name: create_environments
-    type: enum
-    values: ["all", "alpha_only", "none"]
-    default: "all"
-    description: >
-      Which deployment environments to provision. "all" creates alpha,
-      staging, and prod. "alpha_only" creates just alpha for early
-      validation. "none" skips environment creation entirely.
-
-  - name: telemetry_enabled
-    type: boolean
-    default: true
-    description: >
-      Include OpenTelemetry scaffold in the project setup. When false, skip
-      telemetry SDK initialization, trace propagation, and metric collection
-      setup.
-```
+No Factory-usage settings. Deployment platform, environment provisioning,
+and telemetry are project-level decisions that belong in SPEC.md and
+CLAUDE.md.
 
 ### /build
 
@@ -201,14 +175,6 @@ settings:
       Number of PRs merged to main between CI pipeline inspections. After
       this many merges, the OPS agent inspects for false positives and false
       negatives. Set to 0 to disable periodic inspections.
-
-  - name: alpha_deploy_enabled
-    type: boolean
-    default: true
-    description: >
-      Allow agents to opt-in to alpha environment deploys during build for
-      early validation. When false, no alpha deploys occur during build --
-      all deployment waits for the /deploy phase.
 
   - name: progress_tracking
     type: enum
@@ -247,16 +213,6 @@ settings:
 
 ```yaml
 settings:
-  - name: mutation_testing
-    type: enum
-    values: ["auto", "always", "never"]
-    default: "auto"
-    description: >
-      Controls mutation testing in Step 2 (test quality audit). "auto" runs
-      mutation testing only if the stack supports it and a mutation tool is
-      installed. "always" fails if no mutation tool is available. "never"
-      skips mutation testing entirely.
-
   - name: write_missing_tests
     type: boolean
     default: true
@@ -304,41 +260,13 @@ settings:
 
 ```yaml
 settings:
-  - name: default_target
-    type: enum
-    values: ["alpha", "staging", "prod"]
-    default: "prod"
-    description: >
-      Default deployment target when /deploy is invoked without specifying
-      an environment. The skill still performs all gate checks for the
-      selected target.
-
   - name: auto_archive_receipts
     type: boolean
     default: true
     description: >
       Automatically rename existing DEPLOY-RECEIPT.md to
-      DEPLOY-RECEIPT-{timestamp}.md before writing a new receipt. When false,
-      overwrite the existing receipt without archiving.
-
-  - name: staging_auto_rollback
-    type: boolean
-    default: false
-    description: >
-      Enable automatic rollback on staging when post-deploy verification
-      fails. By default staging rollback is manual (the developer
-      investigates). Enabling this makes staging behave like prod for
-      rollback.
-
-  - name: prod_confirmation
-    type: enum
-    values: ["always", "skip_if_promoted"]
-    default: "always"
-    description: >
-      Controls user confirmation before prod deploys. "always" requires
-      explicit confirmation every time. "skip_if_promoted" skips
-      confirmation if the deploy is a promotion from staging with passing
-      gates (still requires all gate checks).
+      DEPLOY-RECEIPT-{timestamp}.md before writing a new receipt. When
+      false, overwrite the existing receipt without archiving.
 ```
 
 ---
@@ -360,6 +288,14 @@ redundant.
 | `pr_merge_strategy` | /build | Belongs in project CLAUDE.md. Merge strategy (squash, rebase) is a project convention. CLAUDE.md already mandates squash-before-merge. |
 | `ci_provider` | /setup | Belongs in project config. The CI provider is an infrastructure choice, not Factory behavior. Currently hardcoded to GitHub Actions. |
 | `max_ideas` | /ideation | Renamed to `idea_count` and kept. The original name was ambiguous. |
+| `deployment_platform` | /setup | Belongs in SPEC.md. Platform is a project decision. |
+| `create_environments` | /setup | Belongs in SPEC.md. Environment provisioning is project-level. |
+| `telemetry_enabled` | /setup | Belongs in SPEC.md. Telemetry is a project decision. |
+| `alpha_deploy_enabled` | /build | Alpha deploy opt-in is a build-time coordination concern, not a persistent setting. |
+| `mutation_testing` | /qa | Too granular. QA skill already adapts based on stack support. |
+| `default_target` | /deploy | Deploy target should be explicit per invocation, not a default that could lead to accidental prod deploys. |
+| `staging_auto_rollback` | /deploy | Staging rollback is manual by design. Making it auto undermines investigation. |
+| `prod_confirmation` | /deploy | Prod confirmation is mandatory by design. Weakening it is too risky. |
 | `retro_mandatory` | /retro | Rejected. Retro is mandatory by pipeline design (CLAUDE.md). Making it configurable undermines the pipeline's quality model. |
 | `gate_override` | /security, /qa | Rejected. Allowing gate overrides undermines the purpose of gates. If a CRITICAL finding exists, deployment must be blocked. This is a design principle, not a setting. |
 | `auto_promote` | /deploy | Rejected. Automatic promotion from staging to prod without user confirmation is too risky. The skill requires explicit confirmation for prod by design. The `prod_confirmation: skip_if_promoted` setting is the controlled relaxation of this. |
