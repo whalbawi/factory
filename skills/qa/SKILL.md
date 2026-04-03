@@ -149,6 +149,7 @@ with `status: failed` and whatever findings were collected.
 ## Summary
 
 - **Overall status**: PASS / FAIL / PASS WITH WARNINGS
+- **Tested commit**: [output of `git rev-parse HEAD`]
 - **Coverage**: X% line, Y% branch, Z% function
 - **Acceptance criteria**: N/M passing
 - **Test quality**: [Brief assessment]

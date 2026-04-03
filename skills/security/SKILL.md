@@ -157,6 +157,7 @@ source of truth.
 ## Summary
 
 - **Overall status**: CLEAR / WARNINGS / BLOCKED
+- **Tested commit**: [output of `git rev-parse HEAD`]
 - **Critical findings**: [count]
 - **High findings**: [count]
 - **Medium findings**: [count]
