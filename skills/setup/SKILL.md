@@ -41,12 +41,18 @@ explanation.
 
 Follow these seven steps in order. Do not skip steps. Do not reorder.
 
-### Step 1: Read Inputs
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `setup`
+- `{OUTPUT_FILES}` = `["fly.toml", "fly.alpha.toml", "fly.staging.toml", "Dockerfile", ".github/workflows/ci.yml", ".github/workflows/deploy.yml"]`
+
+Read and follow the **Settings Protocol**, **State Tracking**, and
+**Secrets Handling** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Step 1: Read Inputs
 
 Parse `SPEC.md`, `CLAUDE.md`, and `PROTOTYPE-DECISION.md` (if present) to extract:
 
@@ -431,61 +437,6 @@ Run the scaffold end-to-end. Every check must pass before reporting success:
 
 If any verification step fails, fix it before reporting success. The scaffold must be
 green on first checkout. Report all verification results to the user.
-
-## State Tracking
-
-Update `.factory/state.json` on invocation and completion. If the file does not exist,
-create it. If it exists, update only the `setup` phase — do not modify other phases.
-
-**On start** — set `setup` to `in_progress`:
-
-```json
-{
-  "phases": {
-    "setup": {
-      "status": "in_progress",
-      "started_at": "<ISO-8601 timestamp>"
-    }
-  }
-}
-```
-
-**On completion** — set `setup` to `completed` with outputs:
-
-```json
-{
-  "phases": {
-    "setup": {
-      "status": "completed",
-      "started_at": "<ISO-8601 timestamp>",
-      "completed_at": "<ISO-8601 timestamp>",
-      "outputs": [
-        "fly.toml",
-        "fly.alpha.toml",
-        "fly.staging.toml",
-        "Dockerfile",
-        ".github/workflows/ci.yml",
-        ".github/workflows/deploy.yml"
-      ]
-    }
-  }
-}
-```
-
-**On failure** — set `setup` to `failed` with reason:
-
-```json
-{
-  "phases": {
-    "setup": {
-      "status": "failed",
-      "started_at": "<ISO-8601 timestamp>",
-      "failed_at": "<ISO-8601 timestamp>",
-      "failure_reason": "Description of what failed and why"
-    }
-  }
-}
-```
 
 ## Stack-Specific Patterns
 

@@ -99,10 +99,15 @@ hand-wavy output. Discovery is where rigor starts.
 
 ### Mindset
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+### Skill Parameters
+
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `spec`
+- `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md"]`
+
+Read and follow the **Settings Protocol** and **State Tracking** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 
 - **You are not a stenographer.** Your job is to understand the product well
   enough to build it, not to record what the user said. If something doesn't
@@ -926,35 +931,6 @@ or contracts.
 |---|---|
 | Single-domain | `SPEC.md` + `CLAUDE.md` |
 | Multi-domain | `CLAUDE.md` + `SPEC.md` (master) + `specs/SPEC-{domain}.md` per domain (consolidated agent specs) |
-
----
-
-## State Tracking
-
-On start, completion, or failure, the spec skill updates
-`.factory/state.json` to record its phase status. If `.factory/` or
-`state.json` do not exist, create them. Always merge into existing state —
-never overwrite other phases.
-
-- **On start**: Set the `spec` phase to `in_progress`.
-- **On completion**: Set the `spec` phase to `completed` and include a list
-  of all output files produced (e.g., `SPEC.md`, `CLAUDE.md`,
-  `specs/SPEC-*.md`).
-- **On failure**: Set the `spec` phase to `failed` and include a `reason`
-  describing what went wrong.
-
-Example state after successful completion:
-
-```json
-{
-  "phases": {
-    "spec": {
-      "status": "completed",
-      "outputs": ["SPEC.md", "CLAUDE.md", "specs/SPEC-api.md", "specs/SPEC-frontend.md"]
-    }
-  }
-}
-```
 
 ---
 

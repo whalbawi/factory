@@ -56,12 +56,22 @@ pass.
 
 ## Process
 
-### Step 1 — Coverage Analysis
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `qa`
+- `{OUTPUT_FILES}` = `["QA-REPORT.md"]`
+
+Read and follow the **Settings Protocol** and **State Tracking** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+**Additional state fields for this skill:**
+
+On failure, also include:
+- `"outputs": ["QA-REPORT.md"]` (partial report is still produced)
+
+### Step 1 — Coverage Analysis
 
 Run the test suite with coverage instrumentation using the commands from
 `CLAUDE.md`.
@@ -205,65 +215,6 @@ edge cases, minor inconsistencies.]
 
 [Prioritized list of what to fix before deploying. Reference specific
 issues above.]
-```
-
-## State Tracking Protocol
-
-Every invocation of `/qa` must update `.factory/state.json`, whether the
-skill is invoked standalone or as part of the `/factory` pipeline. If
-`.factory/state.json` does not exist, create it. If it already exists with
-other phases, merge — do not overwrite existing phase data.
-
-### On Start
-
-Set the `qa` phase to `in_progress` with a `started_at` timestamp:
-
-```json
-{
-  "phases": {
-    "qa": {
-      "status": "in_progress",
-      "started_at": "2026-04-03T14:00:00Z"
-    }
-  }
-}
-```
-
-### On Completion
-
-Set the `qa` phase to `completed` with `completed_at` and `outputs`:
-
-```json
-{
-  "phases": {
-    "qa": {
-      "status": "completed",
-      "started_at": "2026-04-03T14:00:00Z",
-      "completed_at": "2026-04-03T14:45:00Z",
-      "outputs": ["QA-REPORT.md"]
-    }
-  }
-}
-```
-
-### On Failure
-
-Set the `qa` phase to `failed` with `failed_at` and `failure_reason`.
-Even on failure, `QA-REPORT.md` is listed in outputs because the skill
-always produces a report:
-
-```json
-{
-  "phases": {
-    "qa": {
-      "status": "failed",
-      "started_at": "2026-04-03T14:00:00Z",
-      "failed_at": "2026-04-03T14:10:00Z",
-      "failure_reason": "Test suite failed to execute: missing vitest dependency",
-      "outputs": ["QA-REPORT.md"]
-    }
-  }
-}
 ```
 
 ## Settings

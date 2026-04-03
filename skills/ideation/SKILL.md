@@ -23,12 +23,17 @@ cannot name the problem, the idea is noise.
 
 Follow these 6 steps in order. Do not skip or combine steps.
 
-### Step 1: Context Gathering
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `ideation`
+- `{OUTPUT_FILES}` = `["IDEATION.md"]`
+
+Read and follow the **Settings Protocol** and **State Tracking** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Step 1: Context Gathering
 
 Before any brainstorming, understand what exists.
 
@@ -178,56 +183,6 @@ preserved for future ideation sessions.]
 If the session ends before completion (user abandons, error, etc.), write a partial `IDEATION.md`
 with whatever was produced. Add `status: incomplete` on the first line after the title so downstream
 skills know the output is not finalized.
-
-## State Tracking
-
-Every invocation must update `.factory/state.json`. If the file or `.factory/` directory does not
-exist, create them.
-
-**On start** — read `.factory/state.json` (if it exists), then merge in:
-
-```json
-{
-  "phases": {
-    "ideation": {
-      "status": "in_progress",
-      "started_at": "<ISO 8601 timestamp>"
-    }
-  }
-}
-```
-
-Do not overwrite other phases in the file. Merge only the `ideation` key.
-
-**On completion** — update the ideation phase:
-
-```json
-{
-  "phases": {
-    "ideation": {
-      "status": "completed",
-      "started_at": "<original start time>",
-      "completed_at": "<ISO 8601 timestamp>",
-      "outputs": ["IDEATION.md"]
-    }
-  }
-}
-```
-
-**On failure** — update the ideation phase:
-
-```json
-{
-  "phases": {
-    "ideation": {
-      "status": "failed",
-      "started_at": "<original start time>",
-      "failed_at": "<ISO 8601 timestamp>",
-      "failure_reason": "<what happened, e.g. 'User ended session before idea selection'>"
-    }
-  }
-}
-```
 
 On failure, still write a partial `IDEATION.md` with `status: incomplete` (see Output Template).
 

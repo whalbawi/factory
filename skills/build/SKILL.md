@@ -71,12 +71,18 @@ Branch naming follows `feat/{task-description}` or `fix/{fix-description}`.
 
 ## Process
 
-### Phase 1: Task Decomposition
+### Skill Parameters
 
-Before starting, read `.factory/settings.json` and resolve this skill's
-settings against the declared schema. Use stored values where present,
-defaults where not, and prompt for any setting with no default and no
-stored value.
+For the sections referenced in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `build`
+- `{OUTPUT_FILES}` = `["PROGRESS.md", "src/", "tests/"]`
+
+Read and follow the **Settings Protocol**, **State Tracking**, and
+**Post-Merge Cleanup** sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
+
+### Phase 1: Task Decomposition
 
 The Architect reads `SPEC.md`, every file in `specs/`, and `CLAUDE.md`, then
 produces a task breakdown:
@@ -265,57 +271,6 @@ build status.
 **Anti-pattern**: Do not broadcast status updates to all agents. Each agent
 should only receive messages relevant to their work. The Architect handles
 rollup and cross-cutting coordination.
-
----
-
-## State Tracking
-
-Update `.factory/state.json` on invocation and completion. If no state file
-exists, create one. Read the existing file, merge the build phase state, and
-write back. Do not overwrite other phases' state.
-
-**On start**:
-
-```json
-{
-  "phases": {
-    "build": {
-      "status": "in_progress",
-      "started_at": "<ISO-8601 timestamp>"
-    }
-  }
-}
-```
-
-**On completion**:
-
-```json
-{
-  "phases": {
-    "build": {
-      "status": "completed",
-      "started_at": "<ISO-8601 timestamp>",
-      "completed_at": "<ISO-8601 timestamp>",
-      "outputs": ["PROGRESS.md", "src/", "tests/"]
-    }
-  }
-}
-```
-
-**On failure**:
-
-```json
-{
-  "phases": {
-    "build": {
-      "status": "failed",
-      "started_at": "<ISO-8601 timestamp>",
-      "failed_at": "<ISO-8601 timestamp>",
-      "failure_reason": "3 of 12 tasks blocked — see PROGRESS.md for details"
-    }
-  }
-}
-```
 
 ---
 
