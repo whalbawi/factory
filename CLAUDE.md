@@ -146,6 +146,16 @@ must not break any existing skill conventions. Before committing:
 Once a branch is ready, rebase on main and create a GitHub PR. Monitor CI. Upon success,
 notify the team lead for merge.
 
+**No direct commits to main.** Every change — including renames, config tweaks, and
+deployment receipts — must go through a PR. The only exception is the initial repository
+setup before CI exists.
+
+#### Gate Finality
+
+Once `/qa` or `/security` has run, no further code changes may land on main without
+re-running the affected gate. Gate reports include a `Tested commit` field that `/deploy`
+verifies against HEAD. Any commit after a gate run invalidates the report.
+
 ### Self-Updating Context (CLAUDE.md Auto-Amendment)
 
 CLAUDE.md MUST be amended whenever a learning or course correction occurs:

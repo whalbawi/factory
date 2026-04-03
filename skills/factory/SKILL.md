@@ -221,7 +221,17 @@ Some phases can be skipped; others are mandatory.
 | `/deploy`    | Yes        | User may want to deploy manually             |
 
 When a user requests to skip a non-skippable phase, explain why it is
-mandatory and do not allow it.
+mandatory and do not allow it. This applies even for solo builds —
+a single operator still benefits from a retro pause to capture process
+learnings. "There is no team" is not a valid skip reason for `/retro`.
+
+### Gate Finality
+
+Once `/qa` or `/security` has run, no further code changes may be made
+without re-running the affected gate. If any commit lands on main after
+QA or security was last run, the gate report is stale and must be
+re-generated before `/deploy` can proceed. The `Tested commit` field
+in each report enforces this — `/deploy` verifies it matches HEAD.
 
 When a phase is skipped, record the skip in state with the reason:
 
