@@ -6,6 +6,7 @@ project root.
 | Skill | Spec file | Description |
 |-------|-----------|-------------|
 | `/factory` | [SPEC-orchestration.md](SPEC-orchestration.md) | Pipeline sequencing and state management |
+| `/factory claim` | [SPEC-claim.md](SPEC-claim.md) | Codebase onboarding for existing projects |
 | `/ideation` | [SPEC-ideation.md](SPEC-ideation.md) | Divergent brainstorming |
 | `/spec` | [SPEC-spec.md](SPEC-spec.md) | Product discovery and specification |
 | `/prototype` | [SPEC-prototype.md](SPEC-prototype.md) | Quick throwaway implementations |

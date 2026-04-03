@@ -47,6 +47,12 @@
      for later resumption.
    - *Error behavior*: If a sub-skill fails or the user rejects its output, the orchestrator
      loops on that phase rather than advancing.
+   - *Claim mode*: `/factory claim` deeply reads an existing codebase, infers which
+     pipeline phases are already satisfied, writes `.factory/state.json` with
+     confidence-tagged phase statuses (`completed`, `partial`, `pending`), and proposes a
+     `CLAUDE.md` tailored to the project. Claim is the on-ramp for existing projects. It
+     does not generate spec-level artifacts — it detects what exists and presents findings
+     with confidence levels (high/medium/low). See `specs/SPEC-claim.md` for full details.
 
 2. **`/ideation` skill** — Divergent brainstorming for new features on existing products or
    new product ideas. Structured exploration: problem space mapping, opportunity
@@ -295,6 +301,26 @@
 5. `/qa` records `status: "completed"` and `completed_at` in state
 6. If the user later invokes `/factory`, the orchestrator sees `/qa` was already completed
 
+**Scenario: Claiming an existing project**
+
+1. User has a Node.js/Express project with CI, tests, and Fly.io deployment
+2. User invokes `/factory claim`
+3. Orchestrator enters claim mode, reads package.json, CI config, fly.toml, test files,
+   directory structure, .env.example
+4. Findings are classified by confidence: "Test command: `npm test`" (high — confirmed in
+   both package.json and CI), "Database: PostgreSQL" (medium — DATABASE_URL in .env.example,
+   pg in dependencies), ".env.example lists REDIS_URL but no Redis client found" (low —
+   presented as question)
+5. Pipeline state backfilled: setup = completed (high), build = partial (source exists,
+   tests not executed), deploy = partial (fly.toml exists, status unknown)
+6. Orchestrator proposes a CLAUDE.md with tech stack, commands, deployment info,
+   environment variables
+7. User reviews, asks to add a section about the database migration workflow
+8. Orchestrator incorporates feedback, presents updated CLAUDE.md
+9. User confirms. CLAUDE.md is written, state.json finalized with `claimed: true`
+10. User later runs `/factory` — orchestrator reads state, offers to continue from the
+    build phase
+
 ## Data Model
 
 Factory's "data" is entirely file-based — markdown files and a JSON state file in the
@@ -305,7 +331,8 @@ project repository. No database, no external state.
 - **File**: `.factory/state.json`
 - **Format**: JSON
 - **Content**: Current phase, phase completion timestamps, user decisions at each handoff
-  point, stale markers for phases invalidated by backward navigation
+  point, stale markers for phases invalidated by backward navigation, claim metadata
+  (when project was onboarded via `/factory claim`)
 - **Ownership**: Every skill reads and writes this file. The orchestrator manages phase
   transitions, but standalone skill invocations also update their own phase entry. If the
   file does not exist, any skill that runs will create it.
@@ -380,6 +407,27 @@ project repository. No database, no external state.
   }
   ```
 
+- **Phase status values**: `pending`, `in_progress`, `completed`, `skipped`, `partial`.
+  The `partial` status is used exclusively by `/factory claim` to indicate that a phase
+  has some artifacts present but is not fully satisfied. Normal pipeline execution does
+  not produce `partial` — phases are either completed or not. Skills reading state should
+  treat `partial` the same as `pending` for gating purposes (check for required input
+  files, not phase status).
+
+- **Claim-specific fields**: When a project is onboarded via `/factory claim`, the state
+  file includes additional top-level fields:
+
+  - `claimed` (boolean) — whether claim completed successfully
+  - `claimed_at` (ISO 8601 timestamp) — when claim finished
+  - `claim_confidence` (object) — count of findings at each confidence level:
+    `{"high": N, "medium": N, "low": N}`
+
+  Phases backfilled by claim include:
+
+  - `confidence` (string: `"high"`, `"medium"`, `"low"`) — how certain claim is about
+    the status
+  - `findings` (array of strings) — what artifacts were detected
+
 ### Skill Outputs
 
 | Skill | Output files |
@@ -393,6 +441,7 @@ project repository. No database, no external state.
 | `/qa` | `QA-REPORT.md` |
 | `/security` | `SECURITY.md` |
 | `/deploy` | `DEPLOY-RECEIPT.md` |
+| `/factory claim` | `.factory/state.json` (always), `CLAUDE.md` (user-confirmed) |
 | `/monitor` (v1.1) | `MONITOR-REPORT.md` |
 
 ### Skill Files (the Framework Itself)
@@ -500,6 +549,7 @@ logical groups that share conventions and interfaces:
   | `/security` | `specs/SPEC-security.md` |
   | `/deploy` | `specs/SPEC-deploy.md` |
   | `/factory` | `specs/SPEC-orchestration.md` |
+  | `/factory claim` | `specs/SPEC-claim.md` |
 
   The old `SPEC-core-skills.md` is replaced by a slim index file (`specs/INDEX.md`) that
   links to individual spec files.
@@ -619,6 +669,10 @@ skill clarity, help text, anti-patterns, naming conventions, and documentation.
 | Backward navigation resets downstream phases | When jumping back, later phases are set to `pending` with `stale: true`. Outputs preserved on disk for reference. Simplest safe behavior. | Yes |
 | State tracking from day 1 | Every skill updates `.factory/state.json` on invocation and completion, even standalone. Ensures pipeline state is always accurate. | No |
 | Per-skill spec files | Individual spec files (`specs/SPEC-{skill}.md`) instead of monolithic `SPEC-core-skills.md`. Easier to navigate, review, and update independently. | Yes |
+| `partial` phase status for claim mode | Existing projects often have incomplete phase coverage (CI but no deploy). `partial` is written only by `/factory claim`, not by normal pipeline execution. Skills treat `partial` as `pending` for gating. | Yes |
+| Claim mode is inline in orchestrator | `/factory claim` is a mode of `/factory`, not a separate skill. Claim logic runs inside the orchestrator because it is not a pipeline phase — it is a pre-pipeline onboarding step. | No |
+| Claim does not execute code | Claim reads artifacts but never runs test suites, build commands, or deploy checks. Side-effect-free analysis only. Test execution is `/qa`'s job. | No |
+| Claim proposes CLAUDE.md, never auto-writes | Claim always presents proposed CLAUDE.md content to the user and requires explicit confirmation before writing. Respects existing CLAUDE.md files. | No |
 
 ## Open Questions
 
