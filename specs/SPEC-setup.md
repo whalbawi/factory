@@ -12,7 +12,7 @@ verify is a scaffold that will be debugged during `/build`.
 |--------|--------|
 | **Required inputs** | `SPEC.md`, `CLAUDE.md` |
 | **Optional inputs** | `PROTOTYPE-DECISION.md` |
-| **Outputs** | Project scaffold, CI/CD pipeline, infra config |
+| **Outputs** | Project scaffold, CI/CD pipeline, infra config, `.factory/deploy-config.json` |
 | **Failure mode** | Partial scaffold with manual steps documented |
 
 **Required inputs** must exist before the skill runs. If `SPEC.md` is missing, the skill
@@ -358,6 +358,53 @@ Document this promotion path in `CLAUDE.md` so agents and users understand the f
 
 If the spec specifies a different deployment target, adapt accordingly. The Fly.io
 configuration is the default, not a mandate.
+
+#### 4g. Deployment Manifest
+
+Write `.factory/deploy-config.json` — a machine-readable manifest that captures
+all deployment configuration in one place. This is the source of truth that
+`/deploy` reads to determine what to deploy, where, and how.
+
+The manifest schema:
+
+```json
+{
+  "platform": "fly.io",
+  "project_name": "{app}",
+  "internal_port": 8080,
+  "health_check_path": "/health",
+  "environments": {
+    "alpha": {
+      "app_name": "{app}-alpha",
+      "region": "iad",
+      "config_file": "fly.alpha.toml",
+      "deploy_command": "fly deploy -c fly.alpha.toml",
+      "url": "https://{app}-alpha.fly.dev"
+    },
+    "staging": {
+      "app_name": "{app}-staging",
+      "region": "iad",
+      "config_file": "fly.staging.toml",
+      "deploy_command": "fly deploy -c fly.staging.toml",
+      "url": "https://{app}-staging.fly.dev"
+    },
+    "prod": {
+      "app_name": "{app}",
+      "region": "iad",
+      "config_file": "fly.toml",
+      "deploy_command": "fly deploy -c fly.toml",
+      "url": "https://{app}.fly.dev"
+    }
+  },
+  "rollback_command": "fly releases rollback --app {app_name}",
+  "secrets_command": "fly secrets list --app {app_name}"
+}
+```
+
+Replace all `{app}` placeholders with the actual project name. Adapt the
+schema to the actual deployment platform if not Fly.io. This file must be
+written before Step 6 (Update CLAUDE.md) so the CLAUDE.md deployment section
+can reference it.
 
 ### Step 5: Telemetry Scaffold
 

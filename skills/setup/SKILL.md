@@ -48,7 +48,7 @@ For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 - `{PHASE_NAME}` = `setup`
 - `{OUTPUT_FILES}` = `["fly.toml", "fly.alpha.toml", "fly.staging.toml",
   "Dockerfile", ".github/workflows/ci.yml",
-  ".github/workflows/deploy.yml"]`
+  ".github/workflows/deploy.yml", ".factory/deploy-config.json"]`
 
 ### Step 1: Read Inputs
 
@@ -377,6 +377,55 @@ alpha  -->  staging  -->  prod
 
 Document this promotion path in `CLAUDE.md` so agents and users understand the flow.
 Direct-to-prod deploys bypass QA and security checks and are never acceptable.
+
+#### 4g. Deployment Manifest
+
+Write `.factory/deploy-config.json` capturing all deployment configuration in a
+single machine-readable file. This is the source of truth that `/deploy` reads
+to know what to deploy, where, and how. The CLAUDE.md deployment section is
+derived from this file.
+
+```json
+{
+  "platform": "fly.io",
+  "project_name": "{app}",
+  "internal_port": 8080,
+  "health_check_path": "/health",
+  "environments": {
+    "alpha": {
+      "app_name": "{app}-alpha",
+      "region": "iad",
+      "config_file": "fly.alpha.toml",
+      "deploy_command": "fly deploy -c fly.alpha.toml",
+      "url": "https://{app}-alpha.fly.dev"
+    },
+    "staging": {
+      "app_name": "{app}-staging",
+      "region": "iad",
+      "config_file": "fly.staging.toml",
+      "deploy_command": "fly deploy -c fly.staging.toml",
+      "url": "https://{app}-staging.fly.dev"
+    },
+    "prod": {
+      "app_name": "{app}",
+      "region": "iad",
+      "config_file": "fly.toml",
+      "deploy_command": "fly deploy -c fly.toml",
+      "url": "https://{app}.fly.dev"
+    }
+  },
+  "rollback_command": "fly releases rollback --app {app_name}",
+  "secrets_command": "fly secrets list --app {app_name}"
+}
+```
+
+Replace all `{app}` placeholders with the actual project name. Adjust region,
+port, and URLs based on what the spec requires. If the deployment platform is
+not Fly.io, adapt the schema to the actual platform (the structure stays the
+same — platform, environments, commands, URLs).
+
+This file must be written before Step 6 (Update CLAUDE.md) so that the
+CLAUDE.md deployment section can reference it.
 
 ### Step 5: Telemetry Scaffold
 
