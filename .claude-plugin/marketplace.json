@@ -9,9 +9,9 @@
       "source": {
         "source": "github",
         "repo": "whalbawi/factory",
-        "ref": "v0.3.1"
+        "ref": "v0.4.0"
       },
-      "description": "Idea to production in one pipeline. 10 Claude Code skills for the full development lifecycle."
+      "description": "Idea to production in one pipeline. 11 Claude Code skills for the full development lifecycle."
     }
   ]
 }
