@@ -17,6 +17,7 @@ project root.
 | `/qa` | [SPEC-qa.md](SPEC-qa.md) | Structured quality control |
 | `/security` | [SPEC-security.md](SPEC-security.md) | Security audit and hardening |
 | `/deploy` | [SPEC-deploy.md](SPEC-deploy.md) | Deployment and promotion |
+| `/bugfix` | [SPEC-bugfix.md](SPEC-bugfix.md) | Structured bug triage and compressed pipeline |
 | Global reference | [SPEC-global-reference.md](SPEC-global-reference.md) | Shared conventions extracted into single file |
 
 ## Deferred (v1.1)
