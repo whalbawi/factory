@@ -32,6 +32,7 @@ The deploy skill operates across three environments in a promotion chain:
 **Required inputs**:
 
 - Source code passing all gates required for the target environment
+- `.factory/deploy-config.json` — deployment manifest produced by `/setup`
 - Infrastructure configuration (`fly.toml`, `Dockerfile`, or equivalent)
 - Target environment: `alpha`, `staging`, or `prod` (default: `prod`)
 
@@ -89,24 +90,34 @@ reason, then exit.
 
 ### Step 2: Pre-Deploy Checklist
 
-Verify the deployment environment is ready:
+#### 2a. Read Deployment Manifest
 
-- Environment variables are set for the target environment
-  (`fly secrets list --app {app-name}` or equivalent)
+Read `.factory/deploy-config.json`. This file is the source of truth for
+deployment configuration. If it does not exist, halt with an actionable error
+directing the user to run `/setup` or create the file manually.
+
+Extract from the manifest for the target environment: `app_name`,
+`deploy_command`, `url`, `region`, `health_check_path`, `rollback_command`,
+and `secrets_command`. Use these values throughout Steps 3-5 instead of
+hardcoded assumptions.
+
+#### 2b. Verify Environment Readiness
+
+- Environment variables are set for the target environment (use the
+  `secrets_command` from the manifest — never log or echo secret values)
 - Required secrets are configured — never log or echo secret values
 - Database migrations are ready and tested (if applicable)
 - For staging and prod: capture the current deployed version before proceeding
   (rollback plan)
 
-### Step 3: Deploy (Fly.io Default)
+### Step 3: Deploy
 
-Execute the deployment to the target environment:
+Execute the deployment using values from the deployment manifest:
 
-- Run `fly deploy --app {app-name}` from the project root, where `{app-name}`
-  is `{app}-alpha`, `{app}-staging`, or `{app}` depending on the target
-- Monitor deployment progress via `fly deploy` output
-- For staging and prod: wait for Fly.io's built-in health checks to pass
-- If the platform is not Fly.io, adapt to the configured deployment target
+- Run the `deploy_command` from the manifest for the target environment
+- Monitor deployment progress
+- For staging and prod: wait for the platform's built-in health checks to pass
+- Use the `url` and `health_check_path` from the manifest for post-deploy
   (the deployment command should be documented in `CLAUDE.md`)
 
 ### Step 4: Post-Deploy Verification

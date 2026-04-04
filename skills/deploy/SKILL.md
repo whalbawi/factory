@@ -100,10 +100,38 @@ reason, then exit.
 
 ### Step 2 — Pre-Deploy Checklist
 
-Verify the deployment environment is ready:
+Read the deployment manifest and verify the environment is ready.
+
+#### 2a. Read Deployment Manifest
+
+Read `.factory/deploy-config.json`. This file is the source of truth for
+deployment configuration — it tells you the platform, app names, deploy
+commands, health check paths, and URLs for each environment.
+
+If the file does not exist, halt with an actionable error:
+
+```text
+No deployment manifest found at .factory/deploy-config.json.
+Run /setup to generate the deployment configuration, or create
+the file manually with the required fields (see SPEC-deploy.md).
+```
+
+Extract from the manifest for the target environment:
+
+- `app_name` — the Fly.io app name (or equivalent for other platforms)
+- `deploy_command` — the exact command to run
+- `url` — the base URL for health checks and smoke tests
+- `region` — for the deployment receipt
+- `health_check_path` — the endpoint to verify after deploy
+- `rollback_command` — the command to roll back if needed
+
+Use these values throughout Steps 3-5 instead of hardcoded assumptions.
+
+#### 2b. Verify Environment Readiness
 
 1. Environment variables are set for the target environment
-   (`fly secrets list --app {app-name}` — never log or echo secret values).
+   (use the `secrets_command` from the manifest — never log or echo
+   secret values).
 2. Required secrets are configured (verify names only, never values).
 3. Database migrations are ready and tested (if applicable).
 4. For staging and prod: capture the current deployed version before
@@ -111,15 +139,14 @@ Verify the deployment environment is ready:
 
 ### Step 3 — Deploy
 
-Execute the deployment:
+Execute the deployment using values from the deployment manifest:
 
-1. Run `fly deploy --app {app-name}` from the project root, where
-   `{app-name}` is `{app}-alpha`, `{app}-staging`, or `{app}` depending
-   on the target.
-2. Monitor deployment progress via `fly deploy` output.
-3. For staging and prod: wait for Fly.io's built-in health checks to pass.
-4. If the platform is not Fly.io, adapt to the configured deployment
-   target (the deployment command should be documented in `CLAUDE.md`).
+1. Run the `deploy_command` from the manifest for the target environment.
+2. Monitor deployment progress.
+3. For staging and prod: wait for the platform's built-in health checks
+   to pass.
+4. Use the `url` and `health_check_path` from the manifest for
+   post-deploy verification (Step 4).
 
 ### Step 4 — Post-Deploy Verification
 
