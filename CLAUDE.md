@@ -237,18 +237,10 @@ CLAUDE.md MUST be amended whenever a learning or course correction occurs:
 
 ### Progress Tracking
 
-Every change MUST be tracked in the relevant `PROGRESS-<prefix>.md` file.
-
-| Agent             | Prefix | Scope                                                                    |
-|-------------------|--------|--------------------------------------------------------------------------|
-| Skill Architect   | SA     | Skill internal structure, decision logic, agent orchestration,           |
-|                   |        | cross-skill consistency                                                  |
-| Pipeline Designer | PD     | UX flow, handoff patterns, state machine, information density,           |
-|                   |        | phase transitions                                                        |
-| Quality Engineer  | QE     | Acceptance criteria, contract verification, input/output consistency     |
-| Security Reviewer | SR     | Trust model, security patterns baked into skills, gate behavior          |
-| Technical Writer  | TW     | Skill clarity, help text, anti-patterns, naming conventions,             |
-|                   |        | documentation                                                            |
+When `/build` runs with multiple agents, every change MUST be tracked in the
+relevant `PROGRESS-<prefix>.md` file. For single-operator work (bugfixes,
+small features), git history and PR titles are sufficient — progress files
+are not required.
 
 ## Agent Communication
 
