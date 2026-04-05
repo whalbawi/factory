@@ -20,6 +20,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  VERSION: ${{ inputs.version }}
+
 jobs:
   # --- Step 1: Bump plugin.json and tag ---
   tag:
@@ -33,15 +36,15 @@ jobs:
 
       - name: Validate version format
         run: |
-          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Invalid version format. Use semver: X.Y.Z"
             exit 1
           fi
 
       - name: Check tag does not already exist
         run: |
-          if git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
-            echo "Tag v${{ inputs.version }} already exists."
+          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "Tag v$VERSION already exists."
             echo "SKIP_TAG=true" >> "$GITHUB_ENV"
           fi
 
@@ -49,11 +52,11 @@ jobs:
         if: env.SKIP_TAG != 'true'
         run: |
           CURRENT=$(jq -r .version .claude-plugin/plugin.json)
-          if [ "$CURRENT" = "${{ inputs.version }}" ]; then
-            echo "plugin.json already at ${{ inputs.version }}"
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "plugin.json already at $VERSION"
             echo "SKIP_BUMP=true" >> "$GITHUB_ENV"
           else
-            jq --arg v "${{ inputs.version }}" '.version = $v' \
+            jq --arg v "$VERSION" '.version = $v' \
               .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
           fi
 
@@ -62,16 +65,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="fix/bump-v${{ inputs.version }}"
+          BRANCH="fix/bump-v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add .claude-plugin/plugin.json
-          git commit -m "Bump version to ${{ inputs.version }} in plugin.json"
+          git commit -m "Bump version to $VERSION in plugin.json"
           git push -u origin "$BRANCH"
           gh pr create \
-            --title "Release v${{ inputs.version }}: bump plugin.json" \
-            --body "Bumps plugin.json version to ${{ inputs.version }} in preparation for tagging."
+            --title "Release v$VERSION: bump plugin.json" \
+            --body "Bumps plugin.json version to $VERSION in preparation for tagging."
           echo "Waiting for CI..."
           sleep 15
           for i in $(seq 1 60); do
@@ -94,9 +97,9 @@ jobs:
         run: |
           git checkout main
           git pull --ff-only origin main
-          git tag "v${{ inputs.version }}"
-          git push origin "v${{ inputs.version }}"
-          echo "### Tagged v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "### Tagged v$VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Next: run verification, then dispatch this workflow with **publish**." >> "$GITHUB_STEP_SUMMARY"
@@ -112,10 +115,17 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Validate version format
+        run: |
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format. Use semver: X.Y.Z"
+            exit 1
+          fi
+
       - name: Verify tag exists
         run: |
-          if ! git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
-            echo "::error::Tag v${{ inputs.version }} does not exist. Run 'tag' first."
+          if ! git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "::error::Tag v$VERSION does not exist. Run 'tag' first."
             exit 1
           fi
 
@@ -161,7 +171,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG_SHA=$(git rev-parse "v${{ inputs.version }}")
+          TAG_SHA=$(git rev-parse "v$VERSION")
           RESULT=$(gh run list --commit "$TAG_SHA" --workflow ci.yml --json conclusion --jq '.[0].conclusion // empty')
           if [ -z "$RESULT" ]; then
             echo "::error::No CI run found for tagged commit $TAG_SHA"
@@ -176,8 +186,8 @@ jobs:
       - name: Check if already published
         run: |
           CURRENT_REF=$(jq -r '.plugins[0].source.ref' .claude-plugin/marketplace.json)
-          if [ "$CURRENT_REF" = "v${{ inputs.version }}" ]; then
-            echo "Marketplace already points to v${{ inputs.version }}"
+          if [ "$CURRENT_REF" = "v$VERSION" ]; then
+            echo "Marketplace already points to v$VERSION"
             echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
           fi
 
@@ -186,19 +196,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="fix/marketplace-v${{ inputs.version }}"
+          BRANCH="fix/marketplace-v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          jq --arg ref "v${{ inputs.version }}" \
+          jq --arg ref "v$VERSION" \
             '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
             .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
           git add .claude-plugin/marketplace.json
-          git commit -m "Update marketplace ref to v${{ inputs.version }}"
+          git commit -m "Update marketplace ref to v$VERSION"
           git push -u origin "$BRANCH"
           gh pr create \
-            --title "Release v${{ inputs.version }}: update marketplace ref" \
-            --body "Points marketplace at v${{ inputs.version }}. This is the go-live moment."
+            --title "Release v$VERSION: update marketplace ref" \
+            --body "Points marketplace at v$VERSION. This is the go-live moment."
           echo "Waiting for CI..."
           sleep 15
           for i in $(seq 1 60); do
@@ -213,8 +223,8 @@ jobs:
             sleep 10
           done
           gh pr merge "$BRANCH" --rebase --delete-branch
-          echo "### Published v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Marketplace now points to v${{ inputs.version }}." >> "$GITHUB_STEP_SUMMARY"
+          echo "### Published v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "Marketplace now points to v$VERSION." >> "$GITHUB_STEP_SUMMARY"
 
   # --- Rollback ---
   rollback:
@@ -227,19 +237,26 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Validate version format
+        run: |
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format. Use semver: X.Y.Z"
+            exit 1
+          fi
+
       - name: Verify target tag exists
         run: |
           git fetch origin --tags
-          if ! git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
-            echo "::error::Tag v${{ inputs.version }} does not exist"
+          if ! git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "::error::Tag v$VERSION does not exist"
             exit 1
           fi
 
       - name: Check if already rolled back
         run: |
           CURRENT_REF=$(jq -r '.plugins[0].source.ref' .claude-plugin/marketplace.json)
-          if [ "$CURRENT_REF" = "v${{ inputs.version }}" ]; then
-            echo "Marketplace already points to v${{ inputs.version }}"
+          if [ "$CURRENT_REF" = "v$VERSION" ]; then
+            echo "Marketplace already points to v$VERSION"
             echo "SKIP_ROLLBACK=true" >> "$GITHUB_ENV"
           fi
 
@@ -248,19 +265,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="fix/rollback-to-v${{ inputs.version }}"
+          BRANCH="fix/rollback-to-v$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
-          jq --arg ref "v${{ inputs.version }}" \
+          jq --arg ref "v$VERSION" \
             '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
             .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
           git add .claude-plugin/marketplace.json
-          git commit -m "Rollback marketplace ref to v${{ inputs.version }}"
+          git commit -m "Rollback marketplace ref to v$VERSION"
           git push -u origin "$BRANCH"
           gh pr create \
-            --title "Rollback to v${{ inputs.version }}" \
-            --body "Reverts marketplace ref to v${{ inputs.version }}."
+            --title "Rollback to v$VERSION" \
+            --body "Reverts marketplace ref to v$VERSION."
           echo "Waiting for CI..."
           sleep 15
           for i in $(seq 1 60); do
@@ -275,4 +292,4 @@ jobs:
             sleep 10
           done
           gh pr merge "$BRANCH" --rebase --delete-branch
-          echo "### Rolled back to v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Rolled back to v$VERSION" >> "$GITHUB_STEP_SUMMARY"
