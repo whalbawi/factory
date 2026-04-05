@@ -57,7 +57,7 @@ jobs:
               .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
           fi
 
-      - name: Create bump PR
+      - name: Create and merge bump PR
         if: env.SKIP_TAG != 'true' && env.SKIP_BUMP != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,27 +72,20 @@ jobs:
           gh pr create \
             --title "Release v${{ inputs.version }}: bump plugin.json" \
             --body "Bumps plugin.json version to ${{ inputs.version }} in preparation for tagging."
-          gh pr merge "$BRANCH" --rebase --delete-branch --auto
-
-      - name: Wait for bump PR to merge
-        if: env.SKIP_TAG != 'true' && env.SKIP_BUMP != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH="fix/bump-v${{ inputs.version }}"
-          echo "Waiting for PR to merge..."
+          echo "Waiting for CI..."
+          sleep 15
           for i in $(seq 1 60); do
-            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR merged."
+            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
+            if echo "$CHECKS" | grep -q "pass"; then
               break
             fi
-            if [ "$STATE" = "CLOSED" ]; then
-              echo "::error::PR was closed without merging"
+            if echo "$CHECKS" | grep -q "fail"; then
+              echo "::error::CI failed on bump PR"
               exit 1
             fi
             sleep 10
           done
+          gh pr merge "$BRANCH" --rebase --delete-branch
           git checkout main
           git pull --ff-only origin main
 
@@ -188,7 +181,7 @@ jobs:
             echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Update marketplace.json ref
+      - name: Create and merge marketplace PR
         if: env.SKIP_PUBLISH != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -206,26 +199,20 @@ jobs:
           gh pr create \
             --title "Release v${{ inputs.version }}: update marketplace ref" \
             --body "Points marketplace at v${{ inputs.version }}. This is the go-live moment."
-          gh pr merge "$BRANCH" --rebase --delete-branch --auto
-
-      - name: Wait for publish PR to merge
-        if: env.SKIP_PUBLISH != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH="fix/marketplace-v${{ inputs.version }}"
+          echo "Waiting for CI..."
+          sleep 15
           for i in $(seq 1 60); do
-            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR merged."
+            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
+            if echo "$CHECKS" | grep -q "pass"; then
               break
             fi
-            if [ "$STATE" = "CLOSED" ]; then
-              echo "::error::PR was closed without merging"
+            if echo "$CHECKS" | grep -q "fail"; then
+              echo "::error::CI failed on marketplace PR"
               exit 1
             fi
             sleep 10
           done
+          gh pr merge "$BRANCH" --rebase --delete-branch
           echo "### Published v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Marketplace now points to v${{ inputs.version }}." >> "$GITHUB_STEP_SUMMARY"
 
@@ -256,7 +243,7 @@ jobs:
             echo "SKIP_ROLLBACK=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Rollback marketplace.json ref
+      - name: Create and merge rollback PR
         if: env.SKIP_ROLLBACK != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -274,24 +261,18 @@ jobs:
           gh pr create \
             --title "Rollback to v${{ inputs.version }}" \
             --body "Reverts marketplace ref to v${{ inputs.version }}."
-          gh pr merge "$BRANCH" --rebase --delete-branch --auto
-
-      - name: Wait for rollback PR to merge
-        if: env.SKIP_ROLLBACK != 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BRANCH="fix/rollback-to-v${{ inputs.version }}"
+          echo "Waiting for CI..."
+          sleep 15
           for i in $(seq 1 60); do
-            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR merged."
+            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
+            if echo "$CHECKS" | grep -q "pass"; then
               break
             fi
-            if [ "$STATE" = "CLOSED" ]; then
-              echo "::error::PR was closed without merging"
+            if echo "$CHECKS" | grep -q "fail"; then
+              echo "::error::CI failed on rollback PR"
               exit 1
             fi
             sleep 10
           done
+          gh pr merge "$BRANCH" --rebase --delete-branch
           echo "### Rolled back to v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
