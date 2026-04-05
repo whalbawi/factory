@@ -54,7 +54,7 @@ Follow these five steps in order. Do not skip steps.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `retro`
 - `{OUTPUT_FILES}` = `["RETRO-YYYY-MM-DD.md"]`

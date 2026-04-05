@@ -41,7 +41,7 @@ deployment, confirms health, and produces a receipt.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `deploy`
 - `{OUTPUT_FILES}` = `["DEPLOY-RECEIPT.md"]`

@@ -1,13 +1,17 @@
 # Global Reference — Shared Skill Conventions
 
-This file contains conventions shared across multiple Factory skills. Each
-skill's `SKILL.md` references the sections that apply and provides parameter
-values for any placeholders.
+**STOP. Before executing the skill's main logic, run every [MANDATORY]
+section below in order.** This is not optional. Execute each one as a
+concrete step -- read the condition, perform the action, then move to
+the next.
 
-Sections marked **[MANDATORY]** apply to every skill unconditionally. Skills
-do not need to opt into them — they are enforced by default. All other
-sections are opt-in: a skill follows them only when its `SKILL.md`
-explicitly references them.
+1. Settings Protocol
+2. First-Run Onboarding
+3. CLAUDE.md Drift Sync
+4. (Then proceed to the skill's own process steps)
+
+Sections not marked [MANDATORY] are opt-in -- follow them only when the
+skill's `SKILL.md` explicitly references them.
 
 ---
 

@@ -45,7 +45,7 @@ output rather than skipping it.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `security`
 - `{OUTPUT_FILES}` = `["SECURITY.md"]`
