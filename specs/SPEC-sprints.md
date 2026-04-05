@@ -113,6 +113,7 @@ construction and keeps gate skills independent. The Architect should not invoke 
 complete. Run /qa and /security before I start sprint 2."
 
 When `/build` is invoked standalone (not via `/genesis`), the Architect:
+
 1. Reads the sprint plan from `SPEC.md`.
 2. Reads sprint progress from `.factory/state.json`.
 3. Executes the next incomplete sprint.
@@ -128,6 +129,7 @@ When `/build` is invoked via `/genesis`, the orchestrator handles the loop autom
 full-project regression check. A failing checkpoint blocks the next sprint.
 
 **Checkpoint scope**:
+
 - **Coverage analysis**: Scoped to files changed in the sprint.
 - **Test quality audit**: Scoped to new/modified tests in the sprint.
 - **Acceptance criteria**: Only criteria addressed by sprint tasks.
@@ -148,6 +150,7 @@ Override is recorded in state with the user's rationale. This is an escape hatch
 normal workflow.
 
 **Checkpoint reports**: Each checkpoint produces a sprint-scoped report:
+
 - `QA-REPORT-sprint-{N}.md`
 - `SECURITY-sprint-{N}.md` (only produced if there are findings; CLEAR sprints get a
   one-line note in the final consolidated report)
@@ -188,6 +191,7 @@ with their own compressed pipeline. The checkpoint window (after QA/security, be
 next sprint) is the natural place for bugfixes.
 
 **Flow**:
+
 1. Sprint N completes.
 2. QA checkpoint finds a critical bug.
 3. User invokes `/bugfix` to fix it.
@@ -286,7 +290,7 @@ single sprint (current behavior).
 
 **Add after Phase 5 (Architect Coordination):**
 
-```markdown
+````markdown
 ### Phase 5b: Sprint Completion
 
 When all tasks in the current sprint are merged:
@@ -306,7 +310,7 @@ When all tasks in the current sprint are merged:
    ```
 
 5. The build skill exits. It will be re-invoked after checkpoints pass.
-```
+````
 
 #### New Setting: sprint_checkpoints
 
@@ -409,7 +413,7 @@ resumes from the last incomplete sprint, not from sprint 1.
 
 **Add a section after the existing Process section:**
 
-```markdown
+````markdown
 ### Sprint-Scoped Mode
 
 When invoked with sprint context (via `/genesis` sprint loop or with a `--sprint N`
@@ -449,7 +453,7 @@ The sprint-scoped report uses the same template as the full report but adds:
 
 Sprint-scoped mode is faster because coverage analysis, test audit, and edge case hunting
 are scoped. Regression remains full-project to catch cross-sprint breakage.
-```
+````
 
 ### /security SKILL.md Changes
 
