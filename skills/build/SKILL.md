@@ -50,7 +50,7 @@ based on the project's domain decomposition.
 |--------|--------------------|---------------------------------------------------|
 | ARC    | Software Architect | Orchestrator — task breakdown, merge, coordination |
 | BE     | Backend            | APIs, data layer, business logic, server-side code |
-| FE     | Frontend           | UI components, client-side logic, styling          |
+| FE     | Frontend           | UI components, client-side logic, styling. Must import `design-tokens.json` for all visual values (colors, typography, spacing) -- never hardcode. |
 | OPS    | DevOps             | Infrastructure, CI/CD tweaks, deployment configs   |
 | SEC    | Security           | Auth implementation, input validation, hardening   |
 | QA     | QA                 | Test authoring, coverage gaps, integration tests   |

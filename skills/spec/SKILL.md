@@ -104,7 +104,7 @@ hand-wavy output. Discovery is where rigor starts.
 Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `spec`
-- `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md"]`
+- `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md", "design-tokens.json"]`
 
 - **You are not a stenographer.** Your job is to understand the product well
   enough to build it, not to record what the user said. If something doesn't
@@ -204,6 +204,24 @@ next.
 - Non-negotiable technical requirements (must run offline, must be single
   binary, etc.)
 
+**Visual Identity** *(mandatory for any project with a user-facing interface)*
+
+Do not skip this for UI projects. Users rarely volunteer visual preferences
+unprompted -- you must ask.
+
+- What should this look and feel like? Ask explicitly.
+- Reference sites or apps: "Is there a product whose visual style you
+  admire?" (e.g., "clean like Linear", "bold like Stripe", "minimal like
+  iA Writer"). Users think in references, not hex codes.
+- Theme preference: light, dark, system-adaptive, or no preference.
+- Density: compact (data-heavy), comfortable (consumer), spacious
+  (editorial).
+- Any brand constraints: existing colors, logos, fonts that must be used.
+
+The Product Design agent translates references into concrete design
+constraints and produces `design-tokens.json`. Always confirm the
+interpreted constraints with the user before proceeding.
+
 **Complexity Assessment** *(informs decomposition and agent assignment)*
 
 - How many distinct technical concerns are there? (UI, API, storage, auth,
@@ -212,7 +230,7 @@ next.
   independently?
 - Which specialist agents will be needed and where?
 
-Ask **1–3 questions per message**. Skip areas the user has already addressed.
+Ask **1--3 questions per message**. Skip areas the user has already addressed.
 
 ### Techniques
 
@@ -642,6 +660,12 @@ Produce a domain spec covering:
 5. Design system constraints: typography, spacing, color usage rules,
    component reuse expectations.
 6. Copy guidelines: tone, terminology, error message style, label conventions.
+7. Design tokens: produce a `design-tokens.json` file in the project root
+   following the schema in `skills/references/design-tokens-schema.json`.
+   Populate it with concrete values derived from the user's visual identity
+   preferences (gathered during discovery). This file is the single source
+   of truth for visual design -- all build agents reference it instead of
+   hardcoding colors, fonts, or spacing.
 ```
 
 **Tech Writing**
