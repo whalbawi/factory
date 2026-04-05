@@ -122,7 +122,7 @@ jobs:
           gh pr create \
             --title "Start v${NEXT_VERSION} development" \
             --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v$CURRENT_VERSION."
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
 
       - name: Tag parent commit
         if: env.SKIP_TAG != 'true'
@@ -253,7 +253,13 @@ jobs:
           gh pr create \
             --title "Release v$VERSION: update marketplace ref" \
             --body "Points marketplace at v$VERSION. This is the go-live moment."
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
+          echo "Waiting for auto-merge..."
+          for i in $(seq 1 30); do
+            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "MERGED" ]; then break; fi
+            sleep 5
+          done
           echo "### Published v$VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "Marketplace now points to v$VERSION." >> "$GITHUB_STEP_SUMMARY"
 
@@ -322,5 +328,11 @@ jobs:
           gh pr create \
             --title "Rollback to v$VERSION" \
             --body "Reverts marketplace ref to v$VERSION."
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
+          echo "Waiting for auto-merge..."
+          for i in $(seq 1 30); do
+            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "MERGED" ]; then break; fi
+            sleep 5
+          done
           echo "### Rolled back to v$VERSION" >> "$GITHUB_STEP_SUMMARY"
