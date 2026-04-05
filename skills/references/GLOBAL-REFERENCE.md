@@ -8,7 +8,9 @@ the next.
 1. Settings Protocol
 2. First-Run Onboarding
 3. CLAUDE.md Drift Sync
-4. (Then proceed to the skill's own process steps)
+4. (Execute the skill's main logic)
+5. Spec Maintenance
+6. Output File Handling
 
 Sections not marked [MANDATORY] are opt-in -- follow them only when the
 skill's `SKILL.md` explicitly references them.
@@ -170,3 +172,38 @@ Verify secrets exist but never echo or log their values. Use name-only
 listing commands (e.g., `fly secrets list`), not value-revealing commands
 (e.g., `fly secrets show`). Never include secret values in commit messages,
 PR descriptions, logs, or output files.
+
+---
+
+## Spec Maintenance [MANDATORY]
+
+After completing work that changes the system's behavior, update the
+relevant spec files in `specs/` to reflect the current state. Specs are
+living documents -- they describe what IS, not what WAS planned.
+
+- **Remove** sections that describe features or behavior that no longer
+  exist.
+- **Update** sections where the implementation differs from what the spec
+  originally described.
+- **Add** sections for new behavior that was introduced but not yet
+  documented in the spec.
+
+If the skill's work did not change any system behavior (e.g., a pure
+documentation or process change), skip this step.
+
+This check runs after the skill's main logic completes, before output
+file handling.
+
+---
+
+## Output File Handling [MANDATORY]
+
+After writing output files, check `global.open_report` from
+`.factory/settings.json`. If true, convert each output file to HTML and
+open it in the browser:
+
+1. Convert markdown to HTML (use `uv run --with markdown` or equivalent).
+2. Open the HTML file: `open /tmp/<filename>.html`
+
+This applies to all skill output files: reports, decision documents,
+receipts, triage documents, and ideation output.

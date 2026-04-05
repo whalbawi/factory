@@ -16,7 +16,7 @@ first run — a scaffold that does not verify is a scaffold that will be debugge
 | Aspect              | Detail                                                    |
 |---------------------|-----------------------------------------------------------|
 | **Required inputs** | `SPEC.md`, `CLAUDE.md`                                    |
-| **Optional inputs** | `PROTOTYPE-DECISION.md`                                   |
+| **Optional inputs** | Prototype decisions in `SPEC.md`                          |
 | **Outputs**         | Project scaffold, CI/CD pipeline, infra config            |
 | **Failure mode**    | Partial scaffold with manual steps documented             |
 
@@ -24,8 +24,9 @@ first run — a scaffold that does not verify is a scaffold that will be debugge
 with a clear message directing the user to run `/spec` first. If `CLAUDE.md` is missing,
 abort — you need build commands, conventions, and project context.
 
-**Optional inputs** enhance the output. If `PROTOTYPE-DECISION.md` exists, use the
-selected approach and its architectural implications to inform scaffold structure.
+**Optional inputs** enhance the output. If `SPEC.md` contains a
+`## Prototype Decisions` section, use the selected approach and its
+architectural implications to inform scaffold structure.
 
 **On success**: produce a fully functional project scaffold with source and test
 directories, dependency manifests, linter/formatter/type-checker configuration, CI/CD
@@ -52,7 +53,7 @@ Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERE
 
 ### Step 1: Read Inputs
 
-Parse `SPEC.md`, `CLAUDE.md`, and `PROTOTYPE-DECISION.md` (if present) to extract:
+Parse `SPEC.md` and `CLAUDE.md` to extract:
 
 - Tech stack and language version
 - Project name and structure
@@ -593,9 +594,9 @@ Do not do any of the following:
 - **Generate dead configuration.** Every config file must be referenced by a script or
   command in `CLAUDE.md`. If nobody runs it, do not generate it.
 
-- **Copy prototype code.** If `PROTOTYPE-DECISION.md` exists, use its architectural
-  decisions, not its source code. Prototype code was built without tests, error
-  handling, or security considerations.
+- **Copy prototype code.** If `SPEC.md` has prototype decisions, use the
+  architectural direction, not prototype source code. Prototype code was
+  built without tests, error handling, or security considerations.
 
 - **Leave CLAUDE.md commands vague.** Every command must be exact and copy-pasteable.
   "Run the tests" is not a command. `pnpm test` is.

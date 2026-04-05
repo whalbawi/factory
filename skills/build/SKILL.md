@@ -24,7 +24,8 @@ tell the user which prerequisite is unmet.
 - `specs/` — domain specs (`SPEC-{domain}.md`) defining bounded contexts
 - Project scaffold — directory structure, dependencies, CI/CD (output of
   `/setup`)
-- Optionally, `PROTOTYPE-DECISION.md` — chosen prototype direction
+- Optionally, prototype decisions in `SPEC.md` `## Prototype Decisions`
+  section
 
 ## Agentic Model
 
