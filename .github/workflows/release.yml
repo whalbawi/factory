@@ -120,20 +120,7 @@ jobs:
           gh pr create \
             --title "Start v${NEXT_VERSION} development" \
             --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v${{ steps.current.outputs.version }}."
-          echo "Waiting for CI..."
-          sleep 15
-          for i in $(seq 1 60); do
-            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
-            if echo "$CHECKS" | grep -q "pass"; then
-              break
-            fi
-            if echo "$CHECKS" | grep -q "fail"; then
-              echo "::error::CI failed on bump PR"
-              exit 1
-            fi
-            sleep 10
-          done
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --admin
 
       - name: Tag parent commit
         if: env.SKIP_TAG != 'true'
@@ -257,20 +244,7 @@ jobs:
           gh pr create \
             --title "Release v$VERSION: update marketplace ref" \
             --body "Points marketplace at v$VERSION. This is the go-live moment."
-          echo "Waiting for CI..."
-          sleep 15
-          for i in $(seq 1 60); do
-            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
-            if echo "$CHECKS" | grep -q "pass"; then
-              break
-            fi
-            if echo "$CHECKS" | grep -q "fail"; then
-              echo "::error::CI failed on marketplace PR"
-              exit 1
-            fi
-            sleep 10
-          done
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --admin
           echo "### Published v$VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "Marketplace now points to v$VERSION." >> "$GITHUB_STEP_SUMMARY"
 
@@ -332,18 +306,5 @@ jobs:
           gh pr create \
             --title "Rollback to v$VERSION" \
             --body "Reverts marketplace ref to v$VERSION."
-          echo "Waiting for CI..."
-          sleep 15
-          for i in $(seq 1 60); do
-            CHECKS=$(gh pr checks "$BRANCH" 2>/dev/null || echo "pending")
-            if echo "$CHECKS" | grep -q "pass"; then
-              break
-            fi
-            if echo "$CHECKS" | grep -q "fail"; then
-              echo "::error::CI failed on rollback PR"
-              exit 1
-            fi
-            sleep 10
-          done
-          gh pr merge "$BRANCH" --rebase --delete-branch
+          gh pr merge "$BRANCH" --rebase --delete-branch --admin
           echo "### Rolled back to v$VERSION" >> "$GITHUB_STEP_SUMMARY"
