@@ -1,12 +1,15 @@
 name: Release
 
+# Protocol:
+#   - Every merge to main: run /qa and /security locally, commit versioned reports
+#   - tag: reads current version from plugin.json, bumps to next_version,
+#     tags the parent commit (which has the code, correct version, and reports)
+#   - publish: reads reports from the tag, verifies gates pass, updates marketplace
+#   - rollback: reverts marketplace ref to a previous tag
+
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to release (e.g. 0.5.0)"
-        required: true
-        type: string
       action:
         description: "Release step to run"
         required: true
@@ -15,66 +18,108 @@ on:
           - tag
           - publish
           - rollback
+      next_version:
+        description: "Next development version (for tag action, e.g. 0.6.0)"
+        required: false
+        type: string
+      version:
+        description: "Version to publish or roll back to (for publish/rollback)"
+        required: false
+        type: string
 
 permissions:
   contents: write
   pull-requests: write
 
-env:
-  VERSION: ${{ inputs.version }}
-
 jobs:
-  # --- Step 1: Bump plugin.json and tag ---
+  # --- Tag: bump to next version, tag parent as current version ---
   tag:
     if: inputs.action == 'tag'
     runs-on: ubuntu-latest
+    env:
+      NEXT_VERSION: ${{ inputs.next_version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate version format
+      - name: Validate inputs
         run: |
-          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::Invalid version format. Use semver: X.Y.Z"
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "::error::next_version is required for tag action"
+            exit 1
+          fi
+          if ! echo "$NEXT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid next_version format. Use semver: X.Y.Z"
             exit 1
           fi
 
+      - name: Read current version
+        id: current
+        run: |
+          VERSION=$(jq -r .version .claude-plugin/plugin.json)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Current version: $VERSION"
+
       - name: Check tag does not already exist
         run: |
-          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
-            echo "Tag v$VERSION already exists."
+          TAG="v${{ steps.current.outputs.version }}"
+          if git tag -l "$TAG" | grep -q "$TAG"; then
+            echo "Tag $TAG already exists."
             echo "SKIP_TAG=true" >> "$GITHUB_ENV"
           fi
 
-      - name: Bump plugin.json version
+      - name: Verify versioned gate reports exist
         if: env.SKIP_TAG != 'true'
         run: |
-          CURRENT=$(jq -r .version .claude-plugin/plugin.json)
-          if [ "$CURRENT" = "$VERSION" ]; then
-            echo "plugin.json already at $VERSION"
-            echo "SKIP_BUMP=true" >> "$GITHUB_ENV"
-          else
-            jq --arg v "$VERSION" '.version = $v' \
-              .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
+          VERSION="${{ steps.current.outputs.version }}"
+          QA="QA-REPORT-v${VERSION}.md"
+          SEC="SECURITY-v${VERSION}.md"
+          if [ ! -f "$QA" ]; then
+            echo "::error::$QA not found. Run /qa and commit the report first."
+            exit 1
           fi
+          if [ ! -f "$SEC" ]; then
+            echo "::error::$SEC not found. Run /security and commit the report first."
+            exit 1
+          fi
+          # Verify QA passes
+          STATUS=$(grep -m1 'Overall status' "$QA" | sed 's/.*: *//')
+          if ! echo "$STATUS" | grep -qiE 'PASS'; then
+            echo "::error::QA status is '$STATUS', not PASS."
+            exit 1
+          fi
+          # Verify security not blocked
+          STATUS=$(grep -m1 'Overall status' "$SEC" | sed 's/.*: *//')
+          if echo "$STATUS" | grep -qi 'BLOCKED'; then
+            echo "::error::Security status is BLOCKED."
+            exit 1
+          fi
+          echo "Gates verified: QA and Security pass for v${VERSION}"
 
-      - name: Create and merge bump PR
-        if: env.SKIP_TAG != 'true' && env.SKIP_BUMP != 'true'
+      - name: Record parent commit for tagging
+        if: env.SKIP_TAG != 'true'
+        run: |
+          echo "TAG_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Bump to next version
+        if: env.SKIP_TAG != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH="fix/bump-v$VERSION"
+          BRANCH="fix/bump-v${NEXT_VERSION}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
+          jq --arg v "$NEXT_VERSION" '.version = $v' \
+            .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
           git add .claude-plugin/plugin.json
-          git commit -m "Bump version to $VERSION in plugin.json"
+          git commit -m "Bump version to $NEXT_VERSION (start v${NEXT_VERSION} development)"
           git push -u origin "$BRANCH"
           gh pr create \
-            --title "Release v$VERSION: bump plugin.json" \
-            --body "Bumps plugin.json version to $VERSION in preparation for tagging."
+            --title "Start v${NEXT_VERSION} development" \
+            --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v${{ steps.current.outputs.version }}."
           echo "Waiting for CI..."
           sleep 15
           for i in $(seq 1 60); do
@@ -89,34 +134,39 @@ jobs:
             sleep 10
           done
           gh pr merge "$BRANCH" --rebase --delete-branch
-          git checkout main
-          git pull --ff-only origin main
 
-      - name: Create and push tag
+      - name: Tag parent commit
         if: env.SKIP_TAG != 'true'
         run: |
-          git checkout main
-          git pull --ff-only origin main
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
-          echo "### Tagged v$VERSION" >> "$GITHUB_STEP_SUMMARY"
-          echo "Commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          TAG="v${{ steps.current.outputs.version }}"
+          git tag "$TAG" "$TAG_COMMIT"
+          git push origin "$TAG"
+          echo "### Tagged $TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $TAG_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+          echo "plugin.json at tag: ${{ steps.current.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Next version: $NEXT_VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Next: run verification, then dispatch this workflow with **publish**." >> "$GITHUB_STEP_SUMMARY"
+          echo "Next: dispatch **publish** with version **${{ steps.current.outputs.version }}**" >> "$GITHUB_STEP_SUMMARY"
 
-  # --- Step 2: Update marketplace ref (go live) ---
+  # --- Publish: verify gates from tag, update marketplace ---
   publish:
     if: inputs.action == 'publish'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate version format
+      - name: Validate inputs
         run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::version is required for publish action"
+            exit 1
+          fi
           if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Invalid version format. Use semver: X.Y.Z"
             exit 1
@@ -125,49 +175,47 @@ jobs:
       - name: Verify tag exists
         run: |
           if ! git tag -l "v$VERSION" | grep -q "v$VERSION"; then
-            echo "::error::Tag v$VERSION does not exist. Run 'tag' first."
+            echo "::error::Tag v$VERSION does not exist. Run tag action first."
             exit 1
           fi
 
-      - name: Verify QA gate
+      - name: Verify plugin.json version in tag
         run: |
-          if [ ! -f QA-REPORT.md ]; then
-            echo "::error::QA-REPORT.md not found. Run /qa first."
+          TAG_VERSION=$(git show "v$VERSION:.claude-plugin/plugin.json" | jq -r .version)
+          if [ "$TAG_VERSION" != "$VERSION" ]; then
+            echo "::error::plugin.json in tag says $TAG_VERSION, expected $VERSION"
             exit 1
           fi
-          STATUS=$(grep -m1 'Overall status' QA-REPORT.md | sed 's/.*: *//')
+
+      - name: Verify QA gate from tag
+        run: |
+          QA="QA-REPORT-v${VERSION}.md"
+          if ! git show "v$VERSION:$QA" > /dev/null 2>&1; then
+            echo "::error::$QA not found in tag v$VERSION"
+            exit 1
+          fi
+          STATUS=$(git show "v$VERSION:$QA" | grep -m1 'Overall status' | sed 's/.*: *//')
           if ! echo "$STATUS" | grep -qiE 'PASS'; then
-            echo "::error::QA status is '$STATUS', not PASS. Fix issues and re-run /qa."
+            echo "::error::QA status in tag is '$STATUS', not PASS."
             exit 1
           fi
-          COMMIT=$(grep -m1 'Tested commit' QA-REPORT.md | sed 's/.*: *//')
-          HEAD=$(git rev-parse --short HEAD)
-          if [ "$COMMIT" != "$HEAD" ]; then
-            echo "::error::QA report tested at $COMMIT but HEAD is $HEAD. Re-run /qa."
-            exit 1
-          fi
-          echo "QA gate: $STATUS at $COMMIT"
+          echo "QA gate: $STATUS"
 
-      - name: Verify security gate
+      - name: Verify security gate from tag
         run: |
-          if [ ! -f SECURITY.md ]; then
-            echo "::error::SECURITY.md not found. Run /security first."
+          SEC="SECURITY-v${VERSION}.md"
+          if ! git show "v$VERSION:$SEC" > /dev/null 2>&1; then
+            echo "::error::$SEC not found in tag v$VERSION"
             exit 1
           fi
-          STATUS=$(grep -m1 'Overall status' SECURITY.md | sed 's/.*: *//')
+          STATUS=$(git show "v$VERSION:$SEC" | grep -m1 'Overall status' | sed 's/.*: *//')
           if echo "$STATUS" | grep -qi 'BLOCKED'; then
-            echo "::error::Security status is BLOCKED. Fix critical findings first."
+            echo "::error::Security status in tag is BLOCKED."
             exit 1
           fi
-          COMMIT=$(grep -m1 'Tested commit' SECURITY.md | sed 's/.*: *//')
-          HEAD=$(git rev-parse --short HEAD)
-          if [ "$COMMIT" != "$HEAD" ]; then
-            echo "::error::Security report tested at $COMMIT but HEAD is $HEAD. Re-run /security."
-            exit 1
-          fi
-          echo "Security gate: $STATUS at $COMMIT"
+          echo "Security gate: $STATUS"
 
-      - name: Verify CI passing on tagged commit
+      - name: Verify CI on tagged commit
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -178,7 +226,7 @@ jobs:
             exit 1
           fi
           if [ "$RESULT" != "success" ]; then
-            echo "::error::CI on tagged commit $TAG_SHA is '$RESULT', not success."
+            echo "::error::CI on tagged commit is '$RESULT', not success."
             exit 1
           fi
           echo "CI gate: passing at $TAG_SHA"
@@ -231,14 +279,20 @@ jobs:
     if: inputs.action == 'rollback'
     runs-on: ubuntu-latest
     environment: production
+    env:
+      VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Validate version format
+      - name: Validate inputs
         run: |
+          if [ -z "$VERSION" ]; then
+            echo "::error::version is required for rollback action"
+            exit 1
+          fi
           if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Invalid version format. Use semver: X.Y.Z"
             exit 1

@@ -163,33 +163,42 @@ The `release.yml` GitHub Actions workflow automates the full flow. The
 deployment manifest at `.factory/deploy-config.json` captures the
 configuration.
 
-#### Release Flow
+#### Release Protocol
 
-Version bump first, tag second. This ensures the tagged commit always has
-the correct version in `plugin.json`, the tag is never moved or deleted,
-and `marketplace.json` only points to tags that already exist.
+The version in `plugin.json` is bumped at the **start** of a development
+cycle, not at release time. All commits on main during the cycle carry
+the version being developed. Gate reports (`QA-REPORT-vX.Y.Z.md`,
+`SECURITY-vX.Y.Z.md`) are committed after every merge to main so
+they are always current. When ready to release, the tag goes on the
+commit that already has the correct version and passing gate reports.
 
-The release workflow (`.github/workflows/release.yml`) is triggered via
-`workflow_dispatch` with a version and an action. Run the steps in order
-with any verification between them:
+**Development cycle:**
 
-1. **tag**: Go to Actions > Release > Run workflow. Enter the version
-   (e.g., `0.5.0`) and select `tag`. This bumps `plugin.json` via PR,
-   merges it, and tags the new HEAD as `vX.Y.Z`. The tagged commit has
-   the correct version. The tag is never moved or deleted. The version
-   in plugin.json is required for cache invalidation — Claude Code skips
-   updates if the version hasn't changed.
-2. *(pause)* Run `/qa`, `/security`, or any other verification.
-3. **publish**: Run the workflow again with the same version and select
-   `publish`. This updates `marketplace.json` ref via PR. This is the
-   atomic "go live" moment — users now get the new version. The
-   `publish` job requires the `production` environment approval.
+1. After releasing v0.4.0, bump `plugin.json` to `0.5.0` via PR. This
+   starts the v0.5.0 development cycle.
+2. Develop. After every merge to main, run `/qa` and `/security`
+   locally, then commit `QA-REPORT-v0.5.0.md` and
+   `SECURITY-v0.5.0.md` via PR. Reports are always current.
 
-Between steps 1 and 3, the tag exists but users still get the previous
-version. This is safe — the new version is not discoverable until step 3.
+**Release (via `.github/workflows/release.yml`):**
 
-Each action is idempotent — safe to re-run if interrupted. The workflow
-checks if the tag/bump/ref already exists before acting.
+3. **tag**: Run the workflow with action `tag` and input
+   `next_version=0.6.0`. The workflow reads the current version from
+   `plugin.json` (`0.5.0`), verifies gate reports exist and pass,
+   records the current HEAD, bumps `plugin.json` to `0.6.0` via PR,
+   then tags the recorded HEAD (pre-bump commit) as `v0.5.0`. The tag
+   has the code, correct version, and passing gate reports.
+4. **publish**: Run the workflow with action `publish` and input
+   `version=0.5.0`. Reads gate reports from inside the tag via
+   `git show`, verifies they pass, verifies CI passed on the tagged
+   commit, then updates `marketplace.json` ref via PR. Requires
+   `production` environment approval.
+
+Each action is idempotent. The tag is never moved or deleted.
+
+**Gate report naming:** Reports are versioned per development cycle:
+`QA-REPORT-v0.5.0.md`, `SECURITY-v0.5.0.md`. Previous versions'
+reports remain in the repo as a permanent audit trail.
 
 #### Environments
 
@@ -207,7 +216,7 @@ audit trail of what was deployed, when, and what gates were verified.
 
 #### Rollback
 
-Run the release workflow with the target version and select `rollback`.
+Run the release workflow with action `rollback` and `version=0.4.0`.
 Reverts `marketplace.json` ref to the specified tag via PR. No tag
 deletion, no destructive operations. Idempotent. Requires `production`
 environment approval.
