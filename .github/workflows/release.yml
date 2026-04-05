@@ -27,10 +27,6 @@ on:
         required: false
         type: string
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   # --- Tag: bump to next version, tag parent as current version ---
   tag:
@@ -39,10 +35,17 @@ jobs:
     env:
       NEXT_VERSION: ${{ inputs.next_version }}
     steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Validate inputs
         run: |
@@ -106,11 +109,11 @@ jobs:
       - name: Bump to next version
         if: env.SKIP_TAG != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           BRANCH="fix/bump-v${NEXT_VERSION}"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "factory-release-bot[bot]"
+          git config user.email "factory-release-bot[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           jq --arg v "$NEXT_VERSION" '.version = $v' \
             .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
@@ -120,7 +123,7 @@ jobs:
           gh pr create \
             --title "Start v${NEXT_VERSION} development" \
             --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v${{ steps.current.outputs.version }}."
-          gh pr merge "$BRANCH" --rebase --delete-branch --admin
+          gh pr merge "$BRANCH" --rebase --delete-branch
 
       - name: Tag parent commit
         if: env.SKIP_TAG != 'true'
@@ -143,10 +146,17 @@ jobs:
     env:
       VERSION: ${{ inputs.version }}
     steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Validate inputs
         run: |
@@ -204,7 +214,7 @@ jobs:
 
       - name: Verify CI on tagged commit
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           TAG_SHA=$(git rev-parse "v$VERSION")
           RESULT=$(gh run list --commit "$TAG_SHA" --workflow ci.yml --json conclusion --jq '.[0].conclusion // empty')
@@ -229,11 +239,11 @@ jobs:
       - name: Create and merge marketplace PR
         if: env.SKIP_PUBLISH != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           BRANCH="fix/marketplace-v$VERSION"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "factory-release-bot[bot]"
+          git config user.email "factory-release-bot[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           jq --arg ref "v$VERSION" \
             '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
@@ -244,7 +254,7 @@ jobs:
           gh pr create \
             --title "Release v$VERSION: update marketplace ref" \
             --body "Points marketplace at v$VERSION. This is the go-live moment."
-          gh pr merge "$BRANCH" --rebase --delete-branch --admin
+          gh pr merge "$BRANCH" --rebase --delete-branch
           echo "### Published v$VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "Marketplace now points to v$VERSION." >> "$GITHUB_STEP_SUMMARY"
 
@@ -256,10 +266,17 @@ jobs:
     env:
       VERSION: ${{ inputs.version }}
     steps:
+      - name: Generate App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Validate inputs
         run: |
@@ -291,11 +308,11 @@ jobs:
       - name: Create and merge rollback PR
         if: env.SKIP_ROLLBACK != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           BRANCH="fix/rollback-to-v$VERSION"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "factory-release-bot[bot]"
+          git config user.email "factory-release-bot[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           jq --arg ref "v$VERSION" \
             '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
@@ -306,5 +323,5 @@ jobs:
           gh pr create \
             --title "Rollback to v$VERSION" \
             --body "Reverts marketplace ref to v$VERSION."
-          gh pr merge "$BRANCH" --rebase --delete-branch --admin
+          gh pr merge "$BRANCH" --rebase --delete-branch
           echo "### Rolled back to v$VERSION" >> "$GITHUB_STEP_SUMMARY"
