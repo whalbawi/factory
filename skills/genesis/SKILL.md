@@ -948,6 +948,13 @@ under the `global` namespace in `.factory/settings.json`.
 
 ```yaml
 settings:
+  - name: onboarding_shown
+    type: boolean
+    default: false
+    description: >
+      Whether the first-run onboarding prompt has been shown. Set to
+      true automatically after the prompt displays. Reset with
+      /genesis settings reset global.onboarding_shown to show again.
   - name: open_report
     type: boolean
     default: false

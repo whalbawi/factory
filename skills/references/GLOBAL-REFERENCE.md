@@ -20,6 +20,29 @@ for any setting with no default and no stored value.
 
 ---
 
+## First-Run Onboarding [MANDATORY]
+
+After resolving settings but before any other check, read
+`global.onboarding_shown` from `.factory/settings.json`. If it is `false`
+or absent, display the following prompt and then set
+`global.onboarding_shown` to `true` in `.factory/settings.json`:
+
+```text
+Welcome to Factory -- a pipeline that takes software from idea to production.
+
+  /genesis .... Full guided pipeline (ideation -> spec -> build -> deploy)
+  /ideation ... Brainstorm features    /spec ...... Design and specify
+  /build ...... Construct with agents  /bugfix .... Fix bugs fast
+  /qa ......... Quality control        /security .. Security audit
+  /deploy ..... Ship to production     /genesis settings .. Configure
+
+Run any skill with "help" for details. Start with /genesis to build something new.
+```
+
+If `global.onboarding_shown` is already `true`, skip silently.
+
+---
+
 ## State Tracking [MANDATORY]
 
 Update `.factory/state.json` on invocation and completion. If no state file
