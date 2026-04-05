@@ -95,6 +95,20 @@ produces a task breakdown:
 5. Each task has an ID, description, difficulty estimate, and acceptance
    criteria.
 
+**Sprint awareness:** If `SPEC.md` contains a `## Sprint Plan` section, the
+Architect also:
+
+1. Validates that the sprint plan is consistent with the task DAG (no
+   dependency violations, no missing tasks).
+2. Reads the current sprint from `.factory/state.json` (under
+   `phases.build.sprints.current`; defaults to 1 if absent).
+3. Decomposes only the current sprint's tasks, not the full DAG.
+4. Informs agents of the sprint boundary: "You are working on Sprint N.
+   Do not implement tasks assigned to later sprints."
+
+If no sprint plan exists in `SPEC.md`, the Architect treats the entire
+project as a single sprint (current behavior, unchanged).
+
 The task breakdown is the Architect's primary output before any agent is
 launched. No agent starts work until the DAG is finalized.
 
@@ -185,6 +199,35 @@ Results of each inspection are documented in `PROGRESS-OPS.md` with:
 - Which gates were tested
 - Any false positives or false negatives found
 - Remediation actions taken or recommended
+
+#### Phase 5b: Sprint Completion
+
+When a sprint plan exists and all tasks in the current sprint are merged:
+
+1. The Architect updates `PROGRESS.md` with a sprint summary section:
+   sprint number, tasks merged, and key outcomes.
+2. The Architect updates `.factory/state.json`: marks the sprint as
+   complete under `phases.build.sprints.completed[]`, records the
+   `post_sprint_commit` SHA, and increments `sprints.current`.
+3. If this is the last sprint, the build phase is complete (normal exit).
+4. If more sprints remain, the Architect signals that a checkpoint is
+   needed and exits:
+
+   ```text
+   Sprint [N] of [total] complete.
+   [X] tasks merged, all tests passing.
+
+   Checkpoint required before Sprint [N+1]:
+   - Run /qa for sprint validation
+   - Run /security for sprint validation
+   ```
+
+5. The build skill exits. It will be re-invoked after checkpoints pass
+   (by `/genesis` automatically, or by the user if running standalone).
+
+When `/build` is re-invoked after a checkpoint, it reads sprint state
+from `.factory/state.json` and picks up at the next incomplete sprint
+without re-executing completed sprints.
 
 ### Phase 6: Progress Tracking
 
@@ -304,6 +347,18 @@ settings:
       "full" requires both per-agent PROGRESS-{PREFIX}.md files and
       the rolled-up PROGRESS.md. "rollup_only" requires only the
       Architect's PROGRESS.md, reducing overhead for small projects.
+  - name: sprint_checkpoints
+    type: enum
+    values: ["full", "qa_only", "skip"]
+    default: "full"
+    description: >
+      Controls checkpoint behavior between sprints. "full" runs both
+      /qa and /security after each sprint (recommended). "qa_only"
+      runs only /qa between sprints, deferring security to the final
+      pass. "skip" disables sprint checkpoints entirely, making
+      multi-sprint builds behave like the pre-sprint single-pass
+      model. Does not affect the final full-project QA and security
+      passes.
 ```
 
 ## Anti-Patterns

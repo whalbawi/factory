@@ -154,6 +154,51 @@ Write `QA-REPORT.md` following the template below. The report must be
 written regardless of outcome — a failed QA run still produces a report
 with `status: failed` and whatever findings were collected.
 
+### Sprint-Scoped Mode
+
+When invoked with sprint context (via `/genesis` sprint loop or with a
+`--sprint N` argument), QA runs a scoped pass instead of a full-project
+pass:
+
+1. **Scope identification**: Read `SPEC.md` Sprint Plan to identify
+   which tasks belong to sprint N. Determine the set of files changed
+   by those tasks (from git diff against the pre-sprint commit recorded
+   in `.factory/state.json` under `phases.build.sprints`).
+
+2. **Step 1 (Coverage)**: Measure coverage for sprint-changed files
+   only. Report both sprint-scoped and full-project coverage numbers.
+
+3. **Step 2 (Test Quality)**: Audit only tests added or modified in the
+   sprint.
+
+4. **Step 3 (Acceptance Criteria)**: Verify only criteria addressed by
+   sprint tasks. Reference the sprint's checkpoint criteria from the
+   spec.
+
+5. **Step 4 (Edge Case Hunting)**: Probe new code paths introduced in
+   the sprint. Depth follows the `edge_case_hunting` setting.
+
+6. **Step 5 (Regression)**: ALWAYS full project. This is the critical
+   check -- the sprint must not break anything outside its scope.
+
+7. **Step 6 (Output)**: Write `QA-REPORT-sprint-{N}.md` using the
+   standard template with an additional `## Sprint Scope` section:
+
+   ```markdown
+   ## Sprint Scope
+   - **Sprint**: N of M
+   - **Tasks**: [list of task IDs]
+   - **Files changed**: [count] files across [count] domains
+   - **Pre-sprint commit**: [git SHA]
+   - **Post-sprint commit**: [git SHA]
+   ```
+
+Sprint-scoped mode is faster because coverage analysis, test audit, and
+edge case hunting are scoped. Regression remains full-project to catch
+cross-sprint breakage. After all sprints complete, a final full-project
+QA pass runs (Steps 1-6 unscoped) producing the consolidated
+`QA-REPORT.md`.
+
 ## QA-REPORT.md Template
 
 ```markdown
