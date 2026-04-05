@@ -188,6 +188,7 @@ the sprint state and continues from the last incomplete sprint. Completed
 sprints are not re-executed.
 
 **Backward navigation interaction:**
+
 - Going back to `/spec` resets all sprint progress (existing backward
   navigation semantics). The user revises the spec and the sprint plan,
   then re-enters the build phase from sprint 1.
