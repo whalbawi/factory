@@ -59,15 +59,14 @@ jobs:
           fi
 
       - name: Read current version
-        id: current
         run: |
           VERSION=$(jq -r .version .claude-plugin/plugin.json)
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "CURRENT_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Current version: $VERSION"
 
       - name: Check tag does not already exist
         run: |
-          TAG="v${{ steps.current.outputs.version }}"
+          TAG="v$CURRENT_VERSION"
           if git tag -l "$TAG" | grep -q "$TAG"; then
             echo "Tag $TAG already exists."
             echo "SKIP_TAG=true" >> "$GITHUB_ENV"
@@ -76,7 +75,7 @@ jobs:
       - name: Verify versioned gate reports exist
         if: env.SKIP_TAG != 'true'
         run: |
-          VERSION="${{ steps.current.outputs.version }}"
+          VERSION="$CURRENT_VERSION"
           QA="QA-REPORT-v${VERSION}.md"
           SEC="SECURITY-v${VERSION}.md"
           if [ ! -f "$QA" ]; then
@@ -122,21 +121,21 @@ jobs:
           git push -u origin "$BRANCH"
           gh pr create \
             --title "Start v${NEXT_VERSION} development" \
-            --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v${{ steps.current.outputs.version }}."
+            --body "Bumps plugin.json to ${NEXT_VERSION} after tagging v$CURRENT_VERSION."
           gh pr merge "$BRANCH" --rebase --delete-branch
 
       - name: Tag parent commit
         if: env.SKIP_TAG != 'true'
         run: |
-          TAG="v${{ steps.current.outputs.version }}"
+          TAG="v$CURRENT_VERSION"
           git tag "$TAG" "$TAG_COMMIT"
           git push origin "$TAG"
           echo "### Tagged $TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: $TAG_COMMIT" >> "$GITHUB_STEP_SUMMARY"
-          echo "plugin.json at tag: ${{ steps.current.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "plugin.json at tag: $CURRENT_VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "Next version: $NEXT_VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Next: dispatch **publish** with version **${{ steps.current.outputs.version }}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "Next: dispatch **publish** with version **$CURRENT_VERSION**" >> "$GITHUB_STEP_SUMMARY"
 
   # --- Publish: verify gates from tag, update marketplace ---
   publish:
