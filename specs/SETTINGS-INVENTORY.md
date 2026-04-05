@@ -12,6 +12,14 @@ concerns (coverage targets, test commands, code conventions) belong in the proje
 Settings that apply across multiple skills. Declared in `/genesis`'s configuration and
 inherited by all skills that reference them.
 
+### onboarding_shown
+
+- **Type**: boolean
+- **Default**: `false`
+- **Description**: Whether the first-run onboarding prompt has been shown. Set to true
+  automatically after the prompt displays. Reset to show again.
+- **Used by**: all skills (via GLOBAL-REFERENCE.md First-Run Onboarding section)
+
 ### open_report
 
 - **Type**: boolean

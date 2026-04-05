@@ -327,6 +327,7 @@ Sections marked `[M]` are mandatory and apply to all skills unconditionally.
 | Section              | genesis | build | deploy | ideation | prototype | qa  | retro | security | setup | spec |
 |----------------------|---------|-------|--------|----------|-----------|-----|-------|----------|-------|------|
 | Settings Protocol [M]|    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
+| Onboarding [M]       |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
 | State Tracking [M]   |   (1)   |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
 | Post-Merge Cleanup   |         |   Y   |        |          |           |     |       |          |       |      |
 | Gate Verification    |    Y    |       |   Y    |          |           |     |       |          |       |      |
@@ -346,8 +347,11 @@ Notes:
    (provisioning), but all skills must follow the rule to prevent accidental
    secret exposure.
 4. Drift Sync (CLAUDE.md Drift Sync) runs on every skill invocation after
-   settings resolution. It is skipped if the project has no `CLAUDE.md` or
-   no Factory marker pairs.
+   onboarding. It is skipped if the project has no `CLAUDE.md` or no
+   Factory marker pairs.
+5. Onboarding (First-Run Onboarding) runs once per user. After the prompt
+   is shown, `global.onboarding_shown` is set to true and the check is
+   skipped on all subsequent invocations.
 
 ---
 
