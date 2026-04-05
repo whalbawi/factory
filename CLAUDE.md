@@ -159,26 +159,37 @@ verifies against HEAD. Any commit after a gate run invalidates the report.
 ### Deployment
 
 Factory is deployed as a tagged release with a GitHub Pages landing page.
+The `release.yml` GitHub Actions workflow automates the full flow. The
+deployment manifest at `.factory/deploy-config.json` captures the
+configuration.
 
 #### Release Flow
 
-Tag first, update marketplace second. This eliminates the race window where
-marketplace.json references a tag that does not yet exist.
+Version bump first, tag second. This ensures the tagged commit always has
+the correct version in `plugin.json`, the tag is never moved or deleted,
+and `marketplace.json` only points to tags that already exist.
 
-1. Verify gates: `/qa` and `/security` must both pass at current HEAD.
-2. Tag the current HEAD: `git tag vX.Y.Z`.
-3. Push the tag: `git push origin vX.Y.Z`.
-4. Bump `version` in `.claude-plugin/plugin.json` to the new version.
-5. Update `ref` in `.claude-plugin/marketplace.json` to the new tag name.
-   Do not add a `version` field to marketplace.json — the version in
-   plugin.json is authoritative for caching and update detection.
-6. Commit the version bump via PR. Merge to main.
-7. Write a deployment receipt to `deployments/DEPLOY-RECEIPT-{ISO-datetime}.md`.
-8. Commit and push the receipt via PR.
+The release workflow (`.github/workflows/release.yml`) is triggered via
+`workflow_dispatch` with a version and an action. Run the steps in order
+with any verification between them:
 
-The tag captures the actual product code. The marketplace update (steps 4-6)
-is a pointer change that makes the new version discoverable. Users installing
-between steps 3 and 6 still get the previous version safely.
+1. **tag**: Go to Actions > Release > Run workflow. Enter the version
+   (e.g., `0.5.0`) and select `tag`. This bumps `plugin.json` via PR,
+   merges it, and tags the new HEAD as `vX.Y.Z`. The tagged commit has
+   the correct version. The tag is never moved or deleted. The version
+   in plugin.json is required for cache invalidation — Claude Code skips
+   updates if the version hasn't changed.
+2. *(pause)* Run `/qa`, `/security`, or any other verification.
+3. **publish**: Run the workflow again with the same version and select
+   `publish`. This updates `marketplace.json` ref via PR. This is the
+   atomic "go live" moment — users now get the new version. The
+   `publish` job requires the `production` environment approval.
+
+Between steps 1 and 3, the tag exists but users still get the previous
+version. This is safe — the new version is not discoverable until step 3.
+
+Each action is idempotent — safe to re-run if interrupted. The workflow
+checks if the tag/bump/ref already exists before acting.
 
 #### Environments
 
@@ -196,9 +207,15 @@ audit trail of what was deployed, when, and what gates were verified.
 
 #### Rollback
 
-- **Tag**: `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`
-- **Pages**: `gh api repos/whalbawi/factory/pages -X DELETE`
-- **Plugin**: Update `marketplace.json` ref to the previous tag, commit, push.
+Run the release workflow with the target version and select `rollback`.
+Reverts `marketplace.json` ref to the specified tag via PR. No tag
+deletion, no destructive operations. Idempotent. Requires `production`
+environment approval.
+
+**Manual fallback**:
+
+- **Plugin**: Update `marketplace.json` ref to the previous tag via PR.
+- **Pages**: `gh api repos/whalbawi/factory/pages -X DELETE` (if needed).
 
 ### Self-Updating Context (CLAUDE.md Auto-Amendment)
 

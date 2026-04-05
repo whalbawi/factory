@@ -1,0 +1,22 @@
+{
+  "platform": "github-pages+marketplace",
+  "project_name": "factory",
+  "environments": {
+    "prod": {
+      "app_name": "factory",
+      "region": "global",
+      "deploy_workflow": ".github/workflows/release.yml",
+      "deploy_actions": {
+        "tag": "gh workflow run release.yml -f version=X.Y.Z -f action=tag",
+        "publish": "gh workflow run release.yml -f version=X.Y.Z -f action=publish",
+        "rollback": "gh workflow run release.yml -f version=X.Y.Z -f action=rollback"
+      },
+      "url": "https://whalbawi.github.io/factory/",
+      "marketplace_install": "/plugin marketplace add whalbawi/factory"
+    }
+  },
+  "health_check": "GitHub Pages serves https://whalbawi.github.io/factory/ with 200",
+  "version_source": ".claude-plugin/plugin.json",
+  "marketplace_source": ".claude-plugin/marketplace.json",
+  "notes": "Factory deploys as a tagged release, not a running service. No alpha or staging environments. The release workflow handles version bumping, tagging, and marketplace updates via PRs. Publish and rollback require production environment approval."
+}

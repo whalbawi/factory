@@ -1,0 +1,297 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.5.0)"
+        required: true
+        type: string
+      action:
+        description: "Release step to run"
+        required: true
+        type: choice
+        options:
+          - tag
+          - publish
+          - rollback
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # --- Step 1: Bump plugin.json and tag ---
+  tag:
+    if: inputs.action == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid version format. Use semver: X.Y.Z"
+            exit 1
+          fi
+
+      - name: Check tag does not already exist
+        run: |
+          if git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
+            echo "Tag v${{ inputs.version }} already exists."
+            echo "SKIP_TAG=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Bump plugin.json version
+        if: env.SKIP_TAG != 'true'
+        run: |
+          CURRENT=$(jq -r .version .claude-plugin/plugin.json)
+          if [ "$CURRENT" = "${{ inputs.version }}" ]; then
+            echo "plugin.json already at ${{ inputs.version }}"
+            echo "SKIP_BUMP=true" >> "$GITHUB_ENV"
+          else
+            jq --arg v "${{ inputs.version }}" '.version = $v' \
+              .claude-plugin/plugin.json > tmp.json && mv tmp.json .claude-plugin/plugin.json
+          fi
+
+      - name: Create bump PR
+        if: env.SKIP_TAG != 'true' && env.SKIP_BUMP != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/bump-v${{ inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add .claude-plugin/plugin.json
+          git commit -m "Bump version to ${{ inputs.version }} in plugin.json"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Release v${{ inputs.version }}: bump plugin.json" \
+            --body "Bumps plugin.json version to ${{ inputs.version }} in preparation for tagging."
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
+
+      - name: Wait for bump PR to merge
+        if: env.SKIP_TAG != 'true' && env.SKIP_BUMP != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/bump-v${{ inputs.version }}"
+          echo "Waiting for PR to merge..."
+          for i in $(seq 1 60); do
+            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR merged."
+              break
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR was closed without merging"
+              exit 1
+            fi
+            sleep 10
+          done
+          git checkout main
+          git pull --ff-only origin main
+
+      - name: Create and push tag
+        if: env.SKIP_TAG != 'true'
+        run: |
+          git checkout main
+          git pull --ff-only origin main
+          git tag "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+          echo "### Tagged v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Next: run verification, then dispatch this workflow with **publish**." >> "$GITHUB_STEP_SUMMARY"
+
+  # --- Step 2: Update marketplace ref (go live) ---
+  publish:
+    if: inputs.action == 'publish'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify tag exists
+        run: |
+          if ! git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
+            echo "::error::Tag v${{ inputs.version }} does not exist. Run 'tag' first."
+            exit 1
+          fi
+
+      - name: Verify QA gate
+        run: |
+          if [ ! -f QA-REPORT.md ]; then
+            echo "::error::QA-REPORT.md not found. Run /qa first."
+            exit 1
+          fi
+          STATUS=$(grep -m1 'Overall status' QA-REPORT.md | sed 's/.*: *//')
+          if ! echo "$STATUS" | grep -qiE 'PASS'; then
+            echo "::error::QA status is '$STATUS', not PASS. Fix issues and re-run /qa."
+            exit 1
+          fi
+          COMMIT=$(grep -m1 'Tested commit' QA-REPORT.md | sed 's/.*: *//')
+          HEAD=$(git rev-parse --short HEAD)
+          if [ "$COMMIT" != "$HEAD" ]; then
+            echo "::error::QA report tested at $COMMIT but HEAD is $HEAD. Re-run /qa."
+            exit 1
+          fi
+          echo "QA gate: $STATUS at $COMMIT"
+
+      - name: Verify security gate
+        run: |
+          if [ ! -f SECURITY.md ]; then
+            echo "::error::SECURITY.md not found. Run /security first."
+            exit 1
+          fi
+          STATUS=$(grep -m1 'Overall status' SECURITY.md | sed 's/.*: *//')
+          if echo "$STATUS" | grep -qi 'BLOCKED'; then
+            echo "::error::Security status is BLOCKED. Fix critical findings first."
+            exit 1
+          fi
+          COMMIT=$(grep -m1 'Tested commit' SECURITY.md | sed 's/.*: *//')
+          HEAD=$(git rev-parse --short HEAD)
+          if [ "$COMMIT" != "$HEAD" ]; then
+            echo "::error::Security report tested at $COMMIT but HEAD is $HEAD. Re-run /security."
+            exit 1
+          fi
+          echo "Security gate: $STATUS at $COMMIT"
+
+      - name: Verify CI passing on tagged commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_SHA=$(git rev-parse "v${{ inputs.version }}")
+          RESULT=$(gh run list --commit "$TAG_SHA" --workflow ci.yml --json conclusion --jq '.[0].conclusion // empty')
+          if [ -z "$RESULT" ]; then
+            echo "::error::No CI run found for tagged commit $TAG_SHA"
+            exit 1
+          fi
+          if [ "$RESULT" != "success" ]; then
+            echo "::error::CI on tagged commit $TAG_SHA is '$RESULT', not success."
+            exit 1
+          fi
+          echo "CI gate: passing at $TAG_SHA"
+
+      - name: Check if already published
+        run: |
+          CURRENT_REF=$(jq -r '.plugins[0].source.ref' .claude-plugin/marketplace.json)
+          if [ "$CURRENT_REF" = "v${{ inputs.version }}" ]; then
+            echo "Marketplace already points to v${{ inputs.version }}"
+            echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Update marketplace.json ref
+        if: env.SKIP_PUBLISH != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/marketplace-v${{ inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          jq --arg ref "v${{ inputs.version }}" \
+            '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
+            .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
+          git add .claude-plugin/marketplace.json
+          git commit -m "Update marketplace ref to v${{ inputs.version }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Release v${{ inputs.version }}: update marketplace ref" \
+            --body "Points marketplace at v${{ inputs.version }}. This is the go-live moment."
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
+
+      - name: Wait for publish PR to merge
+        if: env.SKIP_PUBLISH != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/marketplace-v${{ inputs.version }}"
+          for i in $(seq 1 60); do
+            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR merged."
+              break
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR was closed without merging"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "### Published v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Marketplace now points to v${{ inputs.version }}." >> "$GITHUB_STEP_SUMMARY"
+
+  # --- Rollback ---
+  rollback:
+    if: inputs.action == 'rollback'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify target tag exists
+        run: |
+          git fetch origin --tags
+          if ! git tag -l "v${{ inputs.version }}" | grep -q "v${{ inputs.version }}"; then
+            echo "::error::Tag v${{ inputs.version }} does not exist"
+            exit 1
+          fi
+
+      - name: Check if already rolled back
+        run: |
+          CURRENT_REF=$(jq -r '.plugins[0].source.ref' .claude-plugin/marketplace.json)
+          if [ "$CURRENT_REF" = "v${{ inputs.version }}" ]; then
+            echo "Marketplace already points to v${{ inputs.version }}"
+            echo "SKIP_ROLLBACK=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Rollback marketplace.json ref
+        if: env.SKIP_ROLLBACK != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/rollback-to-v${{ inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          jq --arg ref "v${{ inputs.version }}" \
+            '(.plugins[] | select(.name == "factory") | .source.ref) = $ref' \
+            .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
+          git add .claude-plugin/marketplace.json
+          git commit -m "Rollback marketplace ref to v${{ inputs.version }}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "Rollback to v${{ inputs.version }}" \
+            --body "Reverts marketplace ref to v${{ inputs.version }}."
+          gh pr merge "$BRANCH" --rebase --delete-branch --auto
+
+      - name: Wait for rollback PR to merge
+        if: env.SKIP_ROLLBACK != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="fix/rollback-to-v${{ inputs.version }}"
+          for i in $(seq 1 60); do
+            STATE=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || echo "UNKNOWN")
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR merged."
+              break
+            fi
+            if [ "$STATE" = "CLOSED" ]; then
+              echo "::error::PR was closed without merging"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "### Rolled back to v${{ inputs.version }}" >> "$GITHUB_STEP_SUMMARY"
