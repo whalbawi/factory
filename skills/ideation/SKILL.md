@@ -25,7 +25,7 @@ Follow these 6 steps in order. Do not skip or combine steps.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `ideation`
 - `{OUTPUT_FILES}` = `["IDEATION.md"]`

@@ -101,7 +101,7 @@ hand-wavy output. Discovery is where rigor starts.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `spec`
 - `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md"]`

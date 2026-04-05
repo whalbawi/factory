@@ -43,7 +43,7 @@ Follow these seven steps in order. Do not skip steps. Do not reorder.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `setup`
 - `{OUTPUT_FILES}` = `["fly.toml", "fly.alpha.toml", "fly.staging.toml",

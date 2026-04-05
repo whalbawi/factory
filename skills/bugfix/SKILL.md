@@ -44,7 +44,7 @@ provided).
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `bugfix`
 - `{OUTPUT_FILES}` = `["BUGFIX-{id}.md"]`

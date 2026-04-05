@@ -73,7 +73,7 @@ Branch naming follows `feat/{task-description}` or `fix/{fix-description}`.
 
 ### Skill Parameters
 
-For the mandatory sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
 
 - `{PHASE_NAME}` = `build`
 - `{OUTPUT_FILES}` = `["PROGRESS.md", "src/", "tests/"]`
