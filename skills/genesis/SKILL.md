@@ -145,6 +145,55 @@ At each phase, you:
 You do NOT execute phase logic yourself. Each phase has its own skill
 with its own instructions. Your job is sequencing and navigation.
 
+### Sprint Loop
+
+When the build phase begins and `SPEC.md` contains a `## Sprint Plan`
+with more than one sprint, the orchestrator enters a sprint loop instead
+of a single `/build` invocation:
+
+```text
+for each sprint N in sprint_plan:
+  1. Invoke /build (builds sprint N only)
+  2. Verify /build outputs (PROGRESS.md updated, sprint N tasks merged)
+  3. If sprint_checkpoints != "skip":
+     a. Invoke /qa in sprint-scoped mode (sprint N)
+     b. If sprint_checkpoints == "full":
+        Invoke /security in sprint-scoped mode (sprint N)
+     c. If checkpoint fails (QA: FAIL or Security: BLOCKED):
+        - Present findings to user
+        - Offer: [fix and re-run checkpoint / override and continue / abort]
+        - If override: record override in state with user's rationale
+        - If abort: exit build phase with partial completion
+  4. Present sprint summary:
+     "Sprint N of M complete. QA: PASS. Security: CLEAR.
+      Ready for sprint N+1? [Y / review reports / abort]"
+  5. If confirm_phase_transition is true, wait for user confirmation
+
+After all sprints:
+  - Proceed to /retro (mandatory, unchanged)
+  - Then /qa (full project pass)
+  - Then /security (full project pass)
+  - Then /deploy
+```
+
+**State tracking:** The orchestrator writes sprint progress into the
+build phase state under `phases.build.sprints` (see SPEC-sprints.md for
+the full schema). Fields include `total`, `current`, `completed[]` (with
+per-sprint timestamps, task counts, and checkpoint results), and
+`overrides[]`.
+
+**Resumption from interruption:** When `/genesis` resumes and
+`.factory/state.json` has `phases.build.sprints`, the orchestrator reads
+the sprint state and continues from the last incomplete sprint. Completed
+sprints are not re-executed.
+
+**Backward navigation interaction:**
+- Going back to `/spec` resets all sprint progress (existing backward
+  navigation semantics). The user revises the spec and the sprint plan,
+  then re-enters the build phase from sprint 1.
+- Going back to `/build` (e.g., from `/retro`) resumes from the last
+  incomplete sprint, not from sprint 1.
+
 ## Phase Transition Logic
 
 At every phase boundary, follow this protocol:

@@ -136,6 +136,45 @@ Write `SECURITY.md` following the output template below. Set the overall status:
   documented acceptance of risk.
 - **BLOCKED** — one or more CRITICAL findings; deployment must not proceed.
 
+### Sprint-Scoped Mode
+
+When invoked with sprint context (via `/genesis` sprint loop or with a
+`--sprint N` argument), security runs a scoped audit:
+
+1. **Scope identification**: Same as QA -- identify files changed in
+   sprint N from git diff against the pre-sprint commit recorded in
+   `.factory/state.json`.
+
+2. **Step 1 (Dependency audit)**: ALWAYS full project. New dependencies
+   affect the entire project regardless of which sprint introduced them.
+
+3. **Steps 2-4 (Static analysis, threat model, auth review)**: Scoped
+   to changed files and their dependency trees. Only analyze code paths
+   introduced or modified in the sprint.
+
+4. **Step 5 (Secrets management)**: Scoped to changed files. Check for
+   newly introduced secrets, hardcoded credentials, or weakened access
+   patterns.
+
+5. **Step 6 (Output)**: Write `SECURITY-sprint-{N}.md` if any findings
+   exist. If the sprint introduces no security-relevant changes and the
+   dependency audit is clean, record "Sprint N: CLEAR -- no security-
+   relevant changes" in the final consolidated report instead of
+   producing a separate file. Sprint-scoped reports use the standard
+   template with an additional `## Sprint Scope` section:
+
+   ```markdown
+   ## Sprint Scope
+   - **Sprint**: N of M
+   - **Tasks**: [list of task IDs]
+   - **Files changed**: [count] files across [count] domains
+   - **Pre-sprint commit**: [git SHA]
+   - **Post-sprint commit**: [git SHA]
+   ```
+
+After all sprints complete, a final full-project security pass runs
+(Steps 1-6 unscoped) producing the consolidated `SECURITY.md`.
+
 ## Gate Behavior
 
 The `/security` skill is a **hard gate** in the pipeline. The orchestrator

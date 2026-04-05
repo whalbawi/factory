@@ -390,6 +390,25 @@ Include the happy path and 1–2 important failure/edge paths per scenario.
 ## Agent Assignments
 *(See Phase 3 for full structure.)*
 
+## Sprint Plan
+*(Produced during Phase 2b when the project has multiple sprints.
+Omitted for single-sprint projects with 8 or fewer tasks.)*
+
+| Sprint | Tasks | Priority Tier | Dependencies |
+|--------|-------|---------------|--------------|
+| 1 | T1, T2, T3, T4 | P0 (core functionality) | None |
+| 2 | T5, T6, T7 | P1 (essential features) | Sprint 1 complete |
+
+### Sprint 1: [Goal]
+- **Tasks**: T1 (description), T2, T3, T4
+- **Parallel batches**: Batch 1 [T1], Batch 2 [T2, T3], Batch 3 [T4]
+- **Checkpoint criteria**: [Concrete, testable statement of what this sprint delivers]
+
+### Sprint 2: [Goal]
+- **Tasks**: T5, T6, T7
+- **Parallel batches**: Batch 1 [T5, T6, T7]
+- **Checkpoint criteria**: [Concrete, testable statement]
+
 ## Decision Log
 Assumptions and judgment calls made during spec writing. Each entry:
 - **Decision**: What was decided
@@ -510,6 +529,38 @@ Within each batch, all agent calls execute in parallel.
 
 The execution plan respects both domain dependency order (topological sort)
 and maximizes parallelism within each batch.
+
+### Sprint Plan
+
+After producing the execution plan, the Architect sizes the work into
+ordered sprints. Sprints give incremental validation with bounded blast
+radius -- QA and security run as checkpoints between sprints so issues
+are caught early.
+
+1. **Count total tasks** in the task DAG (each task maps to a single PR
+   in `/build`).
+2. **Apply the sizing heuristic**:
+   - 1-8 tasks: 1 sprint (no checkpoints, identical to current behavior)
+   - 9-16 tasks: 2 sprints (split at the natural dependency boundary
+     closest to the midpoint)
+   - 17-30 tasks: 3-4 sprints (split by priority tiers from the spec's
+     ordered in-scope list)
+   - 31+ tasks: 4-6 sprints (split by priority tiers, respecting the
+     size bound)
+3. **Assign tasks to sprints** respecting three criteria in order:
+   - **Dependency closure**: every task's dependencies are in the same
+     or an earlier sprint. No forward references.
+   - **Priority cohesion**: higher-priority items land in earlier
+     sprints. Sprint 1 contains the highest-priority work.
+   - **Size bound**: target 3-8 tasks per sprint, with flexibility for
+     dependency constraints.
+4. For each sprint, list the tasks, their parallel batches, a one-
+   sentence goal, and a **checkpoint criteria** statement -- a concrete,
+   testable description of what the sprint delivers.
+
+If the project has 8 or fewer tasks, assign all tasks to Sprint 1
+(single sprint). This preserves current behavior -- no checkpoints, no
+overhead, and the `## Sprint Plan` section may be omitted entirely.
 
 ---
 

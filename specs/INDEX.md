@@ -19,6 +19,7 @@ project root.
 | `/deploy` | [SPEC-deploy.md](SPEC-deploy.md) | Deployment and promotion |
 | `/bugfix` | [SPEC-bugfix.md](SPEC-bugfix.md) | Structured bug triage and compressed pipeline |
 | Global reference | [SPEC-global-reference.md](SPEC-global-reference.md) | Shared conventions extracted into single file |
+| Sprints | [SPEC-sprints.md](SPEC-sprints.md) | Sprint execution model (cross-cutting) |
 
 ## Deferred (v1.1)
 
