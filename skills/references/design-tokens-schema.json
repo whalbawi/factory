@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Factory design tokens schema. Stack-agnostic visual design values that build agents translate to their framework's convention.",
+  "type": "object",
+  "required": ["colors", "typography", "spacing"],
+  "properties": {
+    "colors": {
+      "type": "object",
+      "properties": {
+        "primary": { "type": "string", "description": "Primary brand color (hex)" },
+        "secondary": { "type": "string", "description": "Secondary accent color (hex)" },
+        "background": { "type": "string", "description": "Default page background (hex)" },
+        "surface": { "type": "string", "description": "Card/panel background (hex)" },
+        "text": { "type": "string", "description": "Default text color (hex)" },
+        "text-muted": { "type": "string", "description": "Secondary text color (hex)" },
+        "border": { "type": "string", "description": "Default border color (hex)" },
+        "error": { "type": "string", "description": "Error/destructive color (hex)" },
+        "warning": { "type": "string", "description": "Warning color (hex)" },
+        "success": { "type": "string", "description": "Success/positive color (hex)" }
+      }
+    },
+    "typography": {
+      "type": "object",
+      "properties": {
+        "font-family-sans": { "type": "string" },
+        "font-family-mono": { "type": "string" },
+        "font-size-xs": { "type": "string" },
+        "font-size-sm": { "type": "string" },
+        "font-size-base": { "type": "string" },
+        "font-size-lg": { "type": "string" },
+        "font-size-xl": { "type": "string" },
+        "font-size-2xl": { "type": "string" },
+        "font-weight-normal": { "type": "number" },
+        "font-weight-medium": { "type": "number" },
+        "font-weight-bold": { "type": "number" },
+        "line-height-tight": { "type": "number" },
+        "line-height-normal": { "type": "number" },
+        "line-height-relaxed": { "type": "number" }
+      }
+    },
+    "spacing": {
+      "type": "object",
+      "description": "Spacing scale (px or rem values)",
+      "properties": {
+        "xs": { "type": "string" },
+        "sm": { "type": "string" },
+        "md": { "type": "string" },
+        "lg": { "type": "string" },
+        "xl": { "type": "string" },
+        "2xl": { "type": "string" }
+      }
+    },
+    "borders": {
+      "type": "object",
+      "properties": {
+        "radius-sm": { "type": "string" },
+        "radius-md": { "type": "string" },
+        "radius-lg": { "type": "string" },
+        "radius-full": { "type": "string" },
+        "width-default": { "type": "string" }
+      }
+    },
+    "shadows": {
+      "type": "object",
+      "properties": {
+        "sm": { "type": "string" },
+        "md": { "type": "string" },
+        "lg": { "type": "string" }
+      }
+    },
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "system"],
+      "description": "Default theme mode"
+    },
+    "density": {
+      "type": "string",
+      "enum": ["compact", "comfortable", "spacious"],
+      "description": "UI density level"
+    }
+  }
+}
