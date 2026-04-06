@@ -264,9 +264,8 @@ When a phase is skipped, record it in state with `"status": "skipped"`,
 
 ## CLAUDE.md Generation (Process Rules)
 
-STOP. Read `references/process-rules-template.md` now. Follow its steps
-before proceeding. It contains the complete process-rules template, section
-markers, bootstrap mode behavior, and claim mode behavior.
+STOP. Read `references/process-rules-template.md` now. Contains the
+process-rules template, markers, and bootstrap/claim behavior.
 Write the template inside `<!-- factory:process-rules:start -->` and
 `<!-- factory:process-rules:end -->` markers. Replace `[project]` with the
 actual project name from `.factory/state.json`.
@@ -339,11 +338,8 @@ table for state backfill.
 
 ### Steps 4-7: Findings, CLAUDE.md, Feedback, Handoff
 
-STOP. Read `references/claim-layers.md` now. Follow its steps before
-proceeding. It contains the complete claim protocol including findings
-presentation (Step 4), CLAUDE.md generation with claim-specific sections
-(Step 5), the feedback loop (Step 6), the write-and-handoff procedure
-(Step 7), and claim anti-patterns.
+STOP. Read `references/claim-layers.md` now. Contains Steps 4-7 (findings,
+CLAUDE.md generation, feedback loop, handoff) and claim anti-patterns.
 
 ## Settings Command
 
