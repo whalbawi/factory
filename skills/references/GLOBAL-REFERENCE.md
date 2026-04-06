@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD046 -->
 # Global Reference — Shared Skill Conventions
 
 **STOP. Before executing the skill's main logic, run every [MANDATORY]
