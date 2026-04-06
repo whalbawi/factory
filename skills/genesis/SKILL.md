@@ -208,37 +208,14 @@ without them.
 ### Present summary
 
 Give a 2-3 sentence summary of what was produced. Highlight key decisions
-or findings. List the output files. Do NOT dump the full content of
-output files — summaries only.
-
-Example:
-
-```text
-Spec complete. Here's what was produced:
-- SPEC.md: [product name] — [one-liner]
-- 3 domain specs: api, frontend, storage
-- CLAUDE.md with build conventions
-
-Key decisions:
-- Tech stack: TypeScript, React, PostgreSQL
-- Deployment: Fly.io
-```
+or findings. List the output files. Do NOT dump full file contents.
 
 ### Offer options
 
-Present the user with choices:
-
-- **Proceed to [next phase]** (default)
-- **Review [current phase] output** — let the user inspect before moving
-- **Revise [current phase]** — re-run with adjustments
-- **Skip [next phase]** — only if the next phase is skippable
-- **Go back to [phase]** — jump to any prior phase
-
-Example:
-
-```text
-Ready to prototype? [Y / review spec / revise / skip / go back to ideation]
-```
+Present the user with choices: proceed to next phase (default), review
+current output, revise current phase, skip next phase (if skippable), or
+go back to a prior phase. Example: `Ready to prototype? [Y / review spec
+/ revise / skip / go back to ideation]`
 
 ### Update state
 
@@ -248,16 +225,7 @@ Record phase completion in `.factory/state.json`. Advance
 ### Special case: build to retro
 
 After `/build` completes, proceed directly to `/retro`. The retro phase
-is mandatory and cannot be skipped — it captures learnings from the build
-while they are fresh.
-
-```text
-Build complete. Here's what was produced:
-- 12 source files across 3 domains
-- All 47 tests passing
-
-Moving to retro to capture learnings from the build.
-```
+is mandatory and cannot be skipped.
 
 ## Phase Skipping Rules
 
@@ -276,191 +244,25 @@ Some phases can be skipped; others are mandatory.
 | `/deploy`    | Yes        | User may want to deploy manually             |
 
 When a user requests to skip a non-skippable phase, explain why it is
-mandatory and do not allow it. This applies even for solo builds —
-a single operator still benefits from a retro pause to capture process
-learnings. "There is no team" is not a valid skip reason for `/retro`.
+mandatory and do not allow it. "There is no team" is not a valid skip
+reason for `/retro`.
 
 ### Gate Finality
 
-Once `/qa` or `/security` has run, no further code changes may be made
-without re-running the affected gate. If any commit lands on main after
-QA or security was last run, the gate report is stale and must be
-re-generated before `/deploy` can proceed. The `Tested commit` field
-in each report enforces this — `/deploy` verifies it matches HEAD.
+Once `/qa` or `/security` has run, no further code changes may land
+without re-running the affected gate. The `Tested commit` field in each
+report must match HEAD for `/deploy` to proceed.
 
-When a phase is skipped, record the skip in state with the reason:
-
-```json
-{
-  "status": "skipped",
-  "skipped": true,
-  "skip_reason": "User chose to skip — spec is clear enough"
-}
-```
+When a phase is skipped, record it in state with `"status": "skipped"`,
+`"skipped": true`, and a `"skip_reason"` string.
 
 ## CLAUDE.md Generation (Process Rules)
 
-The `/genesis` orchestrator owns the process-rules sections of the target
-project's `CLAUDE.md`. These sections define how agents work -- worktree
-isolation, PR workflow, progress tracking, retro requirements, and
-self-updating context. They are not project-specific and do not depend on
-the spec.
-
-The `/spec` skill owns the project-specific sections (summary, architecture,
-technical standards, quality standards, key features). `/genesis` writes the
-process scaffold; `/spec` fills in the project details.
-
-### When to Generate
-
-- **Bootstrap mode (normal pipeline)**: After `/setup` completes (or before
-  `/spec` if setup is skipped), generate or update `CLAUDE.md` with the
-  process-rules sections. This ensures process rules are in place before
-  `/spec` appends project-specific content.
-- **Claim mode**: During Step 5 of claim, write the process-rules sections
-  into the existing or new `CLAUDE.md`. Respect the `update_project_claude_md`
-  setting (prompt/auto/skip).
-
-### Section Markers
-
-Factory-owned content is delimited by HTML comment markers so that
-`/spec` and other tools can identify and preserve it:
-
-```markdown
-<!-- factory:process-rules:start -->
-## Mandatory Process Rules
-...
-## Agent Communication
-...
-<!-- factory:process-rules:end -->
-```
-
-### Bootstrap Mode Behavior
-
-When generating in bootstrap mode:
-
-1. If `CLAUDE.md` does not exist, create it with a `# [Project Name]`
-   heading (derived from `.factory/state.json` `project_name`) followed
-   by the Factory-owned sections inside markers.
-2. If `CLAUDE.md` exists and contains `<!-- factory:process-rules:start -->`,
-   replace everything between the start and end markers with the current
-   template.
-3. If `CLAUDE.md` exists but has no Factory markers, append the
-   Factory-owned sections (inside markers) at the end of the file.
-
-### Claim Mode Behavior
-
-Follow the same logic as bootstrap mode, but gate on the
-`update_project_claude_md` setting:
-
-- **`prompt`** (default): Present the proposed process-rules content and
-  ask the user to confirm before writing.
-- **`auto`**: Write without confirmation.
-- **`skip`**: Do not write process-rules sections. Leave `CLAUDE.md`
-  unchanged (or do not create it).
-
-### Process Rules Template
-
-The following template is written inside the Factory markers. Replace
-`[project]` with the actual project name from `.factory/state.json`.
-
-```markdown
-<!-- factory:process-rules:start -->
-## Mandatory Process Rules
-
-The following rules MUST be followed by each Claude process/agent, for each
-change being made. There are no exceptions.
-
-### Lifecycle of a Change
-
-#### Codebase Exploration
-
-Each process/agent MUST explore the relevant portions of the codebase as
-indicated by the task at hand.
-
-#### Worktree Isolation
-
-Each Claude process/agent MUST work in a separate git worktree and associated
-branch. Create the worktree as a sibling directory (`[project]-wt-<name>`) to
-the project source root, and prefix the branch name with `bug/`, `feat/`, etc.
-
-#### Change Implementation Loop
-
-Always implement a change in small incremental commits. A commit MUST be
-composed of a self-contained unit of logic that positively improves the overall
-system. No commit MUST break any test in the repository. Before committing a
-change to `git`, make sure all tests pertinent to the component you are working
-on run successfully, and make sure that the code format and lint checks pass.
-Rebase on top of `main` frequently to reduce the chances of merge conflicts.
-
-**Squash before merge**: Each PR MUST be merged as a single commit. Before the
-final push, squash all commits on the branch into one via interactive rebase
-(`git rebase -i origin/main`, mark all but the first as `squash`). Write a
-meaningful commit message that describes _what_ and _why_.
-
-Once you are done working on your branch, make sure you run the full test suite.
-If a test fails anywhere, think hard about why it failed and bias towards fixing
-the root cause rather than artificially making the test pass.
-
-[Insert project-specific test, lint, format, and type-check commands here,
- grouped by component. Derive from the tech stack and domain specs.]
-
-#### Pull Request
-
-Once a branch passes the required gates, the process/agent rebases the branch on
-top of `main` and then creates a GitHub PR and monitors CI to make sure all gates
-pass. In case of failure, the process/agent applies the "Change Implementation
-Loop" process to unblock the CI job. Upon success, the process/agent notifies
-the team lead that the PR is ready for merge.
-
-It is the responsibility of the team lead to merge outstanding PRs. The team lead
-MUST come up with an ordering that aims to minimize merge conflicts. The only
-allowed merge strategy is "rebase+merge". Once a PR is merged, the merging agent
-MUST clean up immediately:
-
-1. Delete the remote branch: `git push origin --delete <branch-name>`
-2. Remove the local worktree: `git worktree remove <worktree-path>`
-3. Delete the local branch: `git branch -D <branch-name>`
-
-### Mandatory Retro After Build
-
-After the build phase completes and all PRs are merged, the team MUST run
-`/retro` before proceeding to QA. This is not optional -- it captures process
-learnings while they are fresh. The retro output (`RETRO-{date}.md`) is
-reviewed by the team lead before QA begins.
-
-### Self-Updating Context (CLAUDE.md Auto-Amendment)
-
-CLAUDE.md MUST be amended whenever a learning or course correction occurs:
-- **Autonomous**: When any process/agent discovers something important during
-  development (e.g., a new convention, a gotcha, a pattern that works or fails),
-  they MUST update the relevant section of CLAUDE.md.
-- **User-directed**: When the user gives an instruction that changes how the
-  project works, the receiving agent MUST update CLAUDE.md immediately.
-
-CLAUDE.md is the project's living source of truth. Stale context leads to
-repeated mistakes.
-
-### Progress Tracking
-
-Every code change MUST be tracked in the relevant `PROGRESS-<prefix>.md` file
-using the established format (Task ID, Description, Difficulty, Acceptance
-Criteria, Status, Notes). After updating the component ledger, the change MUST
-be rolled up into `PROGRESS.md` by the team lead. This MUST NEVER be skipped --
-untracked work is invisible work, and invisible work causes coordination failures.
-
-| Agent                | Prefix | Scope                                    |
-|----------------------|--------|------------------------------------------|
-| Software Architect   | ARC    | Cross-cutting architecture, spec consistency |
-[One row per assigned specialist agent, with prefix and scope derived from the
- agent assignment matrix.]
-
-## Agent Communication
-
-Agents should DM each other directly (via SendMessage) for technical questions,
-API contract clarifications, and coordination -- don't wait for the team lead to
-relay. Route status updates and task completions through the team lead as usual.
-<!-- factory:process-rules:end -->
-```
+Read `references/process-rules-template.md` for the complete process-rules
+template, section markers, bootstrap mode behavior, and claim mode behavior.
+Write the template inside `<!-- factory:process-rules:start -->` and
+`<!-- factory:process-rules:end -->` markers. Replace `[project]` with the
+actual project name from `.factory/state.json`.
 
 ## Backward Navigation
 
@@ -472,41 +274,18 @@ reveal issues.
 
 When the user selects "Go back to [phase]":
 
-1. **Warn first.** Show exactly what will be affected:
-
-   ```text
-   Going back to spec will mark prototype, setup, build, retro, and qa
-   as pending. Their output files will be preserved but may need to be
-   regenerated. Proceed? [Y/n]
-   ```
-
+1. **Warn first.** List all phases that will be reset to `pending`.
 2. **Set the target phase** to `in_progress`.
-
-3. **Reset all downstream phases** (everything after the target) to
-   `pending`. This includes skipped phases.
-
-4. **Append a record** to the `resets` array in state:
-
-   ```json
-   {
-     "timestamp": "2026-04-03T14:00:00Z",
-     "from_phase": "qa",
-     "to_phase": "spec",
-     "reason": "User wanted to revise the API design"
-   }
-   ```
-
-5. **Preserve output files** on disk. They are not deleted, but they are
-   considered stale and may need to be regenerated as the user works
-   through the phases again.
+3. **Reset all downstream phases** to `pending` (including skipped).
+4. **Append a record** to `resets` in state with `timestamp`,
+   `from_phase`, `to_phase`, and `reason`.
+5. **Preserve output files** on disk (stale, may need regeneration).
 
 ### Constraints
 
-- The user can only jump backward, not forward past incomplete phases.
-- Jumping backward always resets everything after the target, even phases
-  that were previously skipped.
-- If output files from reset phases were manually edited by the user, warn
-  that re-running the phase may overwrite those files.
+- Only backward jumps allowed, not forward past incomplete phases.
+- Jumping backward resets everything after the target.
+- Warn if reset phases have manually edited output files.
 
 ## Entry at Any Phase
 
@@ -530,464 +309,71 @@ detected. On first invocation with no state file:
 ## Completion
 
 When all phases are done (after `/deploy` completes or is skipped):
-
-1. Present a full summary of what was built.
-2. List all artifacts produced across every phase.
-3. Confirm deployment status (deployed, or skipped if manual).
-4. Suggest next steps:
-
-```text
-Your product is deployed.
-
-Next steps:
-- Run /ideation to brainstorm new features
-- Run /retro for periodic check-ins
-- /monitor is coming in v1.1
-```
+present a full summary of what was built, list all artifacts, confirm
+deployment status, and suggest next steps (`/ideation` for new features,
+`/retro` for check-ins, `/monitor` coming in v1.1).
 
 ## Claim Mode
 
-Claim mode is for onboarding existing codebases into the Factory pipeline.
-It reads the project deeply, infers which phases are already satisfied,
-writes `.factory/state.json`, and proposes a `CLAUDE.md`. It is a
-pre-pipeline step — not a phase in the pipeline sequence.
-
-### Triggering Claim
-
-Claim activates when the user invokes `/genesis claim` or uses phrasing
-like "claim this project", "onboard this codebase", or "take over this
-project".
-
-If `.factory/state.json` already exists with `claimed: true`, warn:
-
-```text
-This project was already claimed on [timestamp]. Re-running claim
-will overwrite the existing state. Continue? [Y/n]
-```
-
-### Step 1: Codebase Deep Read
-
-Read the codebase systematically in five layers. Extract concrete facts
-at each layer before moving to the next.
-
-**Layer 1 — Package Manifests** (tech stack, dependencies, scripts)
-
-Read whichever of these exist: `package.json`, `go.mod`, `Cargo.toml`,
-`pyproject.toml`, `requirements.txt`, `Gemfile`, `pom.xml`,
-`build.gradle`, `mix.exs`, `composer.json`.
-
-Extract: project name, language, language version, framework, package
-manager, runnable scripts (test, build, lint, format, start, deploy).
-
-**Layer 2 — CI/CD Configuration** (automation, test commands, deploy
-targets)
-
-Read: `.github/workflows/*.yml`, `.gitlab-ci.yml`, `Jenkinsfile`,
-`.circleci/config.yml`, `bitbucket-pipelines.yml`.
-
-Extract: CI provider, test command (as run in CI), build command, deploy
-target, environment secrets referenced.
-
-**Layer 3 — Deployment Configuration** (infrastructure, environments)
-
-Read: `fly.toml`, `Dockerfile`, `docker-compose.yml`, `render.yaml`,
-`vercel.json`, `netlify.toml`, `serverless.yml`, `terraform/` or
-`*.tf`, `k8s/` or `kubernetes/`, `Procfile`.
-
-Extract: deployment platform, number of environments, health check
-endpoints, database/service dependencies.
-
-**Layer 4 — Test Infrastructure** (testing patterns, coverage)
-
-Scan for: test directories (`__tests__/`, `test/`, `tests/`, `spec/`),
-test file patterns (`*.test.ts`, `*.spec.ts`, `*_test.go`, `test_*.py`),
-test runner configs (`jest.config.*`, `vitest.config.*`, `pytest.ini`,
-`pyproject.toml [tool.pytest]`), coverage tooling (`.nycrc`,
-`coverage/`), E2E frameworks (`cypress/`, `playwright/`, `e2e/`).
-
-Extract: test runner, test command, test file pattern, approximate test
-count, whether E2E tests exist, coverage tooling.
-
-**Layer 5 — Project Structure and Conventions**
-
-Read: directory tree (depth 3), linter/formatter configs (`.eslintrc*`,
-`.prettierrc*`, `biome.json`), `tsconfig.json`, `.editorconfig`,
-version pinning (`.nvmrc`, `.python-version`, `.tool-versions`), git
-hooks (`.husky/`, `.pre-commit-config.yaml`), `CLAUDE.md`, `README.md`,
-`.env.example`, `CONTRIBUTING.md`.
-
-Extract: code style tools, formatting conventions, version management,
-documentation quality, environment variable requirements.
-
-**Important**: Claim never executes code. It reads artifacts only. No
-`npm test`, no `pytest`, no build commands. Side-effect-free analysis.
-If the user wants test verification, that is `/qa`'s job.
-
-### Step 2: Confidence Classification
-
-Tag every finding with a confidence level. The level determines how it
-is presented to the user.
-
-**High confidence** — multiple corroborating signals. Present as fact.
-
-Examples:
-
-- `npm test` in both `package.json` scripts AND `.github/workflows/ci.yml`
-  -> "Test command: `npm test`"
-- `jest.config.ts` + jest in devDependencies + test files use
-  `describe`/`it` -> "Test runner: Jest"
-- `tsconfig.json` + typescript in devDependencies + `.ts` source files
-  -> "Language: TypeScript"
-
-**Medium confidence** — single authoritative signal. Present with caveat.
-
-Examples:
-
-- `npm test` in `package.json` but no CI config found
-  -> "Test command appears to be `npm test` (from package.json; no CI
-  found to confirm)"
-- `Dockerfile` exists but no deployment config or CI deploy step
-  -> "Dockerized, but deploy target unclear"
-- Test files exist but no test runner config found
-  -> "Tests exist but runner is unclear"
-
-**Low confidence** — indirect or ambiguous signal. Present as a question.
-
-Examples:
-
-- `.env.example` exists but no `dotenv` in dependencies and no env
-  loading code -> "I see .env.example but no dotenv usage. Do you use
-  environment variables?"
-- A `deploy.sh` script exists but target is unclear
-  -> "Found deploy.sh — what platform does this deploy to?"
-
-### Step 3: State Backfill
-
-Map detected artifacts to pipeline phases and write
-`.factory/state.json`. Always write this file — no user confirmation
-needed.
-
-**Artifact-to-phase mapping**:
-
-| Phase | Completed | Partial |
-|-------|-----------|---------|
-| ideation | Not detectable. Always `pending`. | N/A |
-| spec | `SPEC.md` exists | `README.md` with project description |
-| prototype | `prototypes/` + `PROTOTYPE-DECISION.md` | `prototypes/` but no decision doc |
-| setup | Package manifest + CI + deploy config | Manifest exists but no CI, or CI but no deploy |
-| build | Source code + tests exist | Source code but no tests, or tests but some missing |
-| retro | `RETRO-*.md` exists | N/A |
-| qa | `QA-REPORT.md` with passing status | `QA-REPORT.md` with failed status |
-| security | `SECURITY.md` with no critical findings | `SECURITY.md` with unresolved findings |
-| deploy | `DEPLOY-RECEIPT.md` + app accessible | `DEPLOY-RECEIPT.md` but status unknown |
-
-Rules:
-
-- Only mark `completed` with high-confidence findings.
-- Medium-confidence findings -> `partial`.
-- Low-confidence findings -> leave as `pending`.
-- Include `confidence` and `findings` fields for non-pending phases.
-
-Set `current_phase` to the earliest `partial` phase. If no partial
-phases, set it to the earliest `pending` phase that follows a
-`completed` phase.
-
-### Step 4: Present Findings
-
-Present findings grouped by category with confidence-appropriate
-framing:
-
-```text
-I've analyzed your codebase. Here's what I found:
-
-## Tech Stack
-- Language: TypeScript (high confidence)
-- Framework: Express.js (high confidence)
-- Database: PostgreSQL (medium — DATABASE_URL in .env.example)
-
-## Commands
-- Test: `npm test` (confirmed in CI)
-- Build: `npm run build` (confirmed in CI)
-- Lint: `npm run lint` (confirmed in CI)
-
-## Infrastructure
-- CI: GitHub Actions
-- Deploy: Fly.io (fly.toml + deploy workflow)
-
-## Pipeline Status
-- Setup: COMPLETE (high confidence)
-- Build: PARTIAL (source + tests exist, not executed)
-- All other phases: PENDING
-
-## Questions (low-confidence findings)
-- .env.example lists REDIS_URL but no Redis client in dependencies.
-  Do you use Redis?
-```
-
-Rules:
-
-- High-confidence findings: stated as facts, no hedging.
-- Medium-confidence findings: stated with caveats.
-- Low-confidence findings: stated as questions to the user.
-- Do NOT dump raw file contents — summarize.
-
-### Step 5: CLAUDE.md Generation
-
-Claim mode CLAUDE.md generation has two parts: (a) Factory-owned
-process rules, and (b) claim-specific project sections derived from
-the codebase analysis.
-
-#### Part A: Process Rules
-
-Write the Factory-owned process-rules sections using the template and
-marker logic described in [CLAUDE.md Generation (Process Rules)](#claudemd-generation-process-rules)
-above. Gate on the `update_project_claude_md` setting:
-
-- **`prompt`** (default): Present the process-rules content and ask the
-  user to confirm.
-- **`auto`**: Write without confirmation.
-- **`skip`**: Skip process-rules entirely. Proceed to Part B.
-
-If `update_project_claude_md` is `skip`, Part B still runs -- only the
-Factory-owned process rules are skipped.
-
-#### Part B: Claim-Specific Project Sections
-
-After writing (or skipping) process rules, propose claim-specific
-project sections derived from the codebase analysis. These sections
-capture what was discovered about the project and are placed outside
-the Factory markers.
-
-**If no CLAUDE.md exists** (and Part A was skipped): Create the file
-with a `# [Project Name]` heading, then append the claim-specific
-sections.
-
-**If CLAUDE.md already exists**: Read it, identify gaps, and propose
-changes using this format:
-
-```text
-Your CLAUDE.md already has [X sections]. I'd like to propose:
-
-ADD:
-- Commands section with test/build/lint commands
-- Deployment section with Fly.io config
-
-UPDATE:
-- Architecture section: add database component
-
-KEEP AS-IS:
-- Project Summary (looks accurate)
-- Code Conventions (already comprehensive)
-
-Apply these changes? [Y / show diff / edit / skip]
-```
-
-If the user says "show diff", present the full proposed content with
-change markers. If "edit", enter the feedback loop. If "skip", do not
-touch CLAUDE.md. If "Y", apply changes.
-
-**Claim-specific sections structure**:
-
-```markdown
-## Development
-
-### Commands
-- **Test**: `[command]`
-- **Build**: `[command]`
-- **Lint**: `[command]`
-- **Format**: `[command]`
-- **Start (dev)**: `[command]`
-
-### Code Conventions
-- [Convention from linter/formatter config]
-
-## Deployment
-- **Platform**: [platform]
-- **Environments**: [list]
-- **Deploy command**: `[command]`
-
-## Environment Variables
-| Variable | Purpose | Required |
-|----------|---------|----------|
-| [VAR] | [purpose] | [yes/no] |
-```
-
-Content rules:
-
-- Every section must have concrete values, not placeholders. If unknown,
-  omit the section.
-- Commands must be verified against the package manifest or CI config.
-  Do not guess commands.
-- Code conventions extracted from tooling config, not invented.
-- Environment variables from `.env.example` if it exists.
-- Do NOT write project summary, architecture, technical standards, quality
-  standards, or key features -- those are `/spec`'s responsibility.
-
-### Step 6: Feedback Loop
-
-After proposing CLAUDE.md, iterate with the user:
-
-1. User provides feedback ("add X", "remove Y", "change Z").
-2. Incorporate feedback into the proposal.
-3. Present the updated proposal.
-4. Ask for confirmation.
-5. Repeat until user confirms.
-
-If the user has provided feedback 3+ times, ask: "Are we close, or
-should we take a different approach?"
-
-### Step 7: Write and Handoff
-
-1. Write `CLAUDE.md` if confirmed (new or modified).
-2. Update `.factory/state.json` with `claimed: true`, `claimed_at`,
-   and `claim_confidence` summary.
-3. Present the handoff:
-
-```text
-Claim complete. Your project is ready for the Factory pipeline.
-
-Pipeline status:
-- Setup: COMPLETE
-- Build: PARTIAL (source exists, tests not verified)
-- All other phases: PENDING
-
-Recommended next step: /genesis to continue from [current_phase].
-Or run any skill independently: /qa, /security, /spec, etc.
-```
-
-### Claim Anti-Patterns
-
-- **Running test suites or build commands.** Claim reads files, never
-  executes code. No `npm test`, `pytest`, `go build`. Test verification
-  is `/qa`'s job.
-- **Writing CLAUDE.md without confirmation.** Always present, get
-  explicit user approval, then write.
-- **Marking phases `completed` without high confidence.** Medium
-  confidence -> `partial`. Low confidence -> `pending`.
-- **Inventing commands.** If you cannot find a test command in the
-  manifest or CI config, do not guess. Ask the user or omit it.
-- **Reading every file in the repo.** Read specific files and patterns
-  per the five layers. Directory tree at depth 3 and targeted reads are
-  sufficient.
-- **Backfilling spec artifacts.** Claim does NOT generate `SPEC.md`,
-  `IDEATION.md`, or any skill output. It only detects whether they
-  exist.
-- **Treating `partial` as `completed`.** A partial phase has gaps. The
-  orchestrator should surface them and let the user decide.
+Claim mode onboards existing codebases into the Factory pipeline. It
+reads the project, infers which phases are satisfied, writes
+`.factory/state.json`, and proposes a `CLAUDE.md`. It is a pre-pipeline
+step. Activates on `/genesis claim` or phrasing like "claim this
+project" or "onboard this codebase". If already claimed, warn before
+overwriting.
+
+### Steps 1-3: Deep Read, Classification, and Backfill
+
+Read `references/claim-layers.md` for the five-layer deep-read protocol
+(Layer 1 Package Manifests through Layer 5 Project Structure), the
+confidence classification rules (high/medium/low), and the
+artifact-to-phase mapping table for state backfill.
+
+### Steps 4-7: Findings, CLAUDE.md, Feedback, Handoff
+
+Read `references/claim-layers.md` for the complete claim protocol
+including findings presentation (Step 4), CLAUDE.md generation with
+claim-specific sections (Step 5), the feedback loop (Step 6), the
+write-and-handoff procedure (Step 7), and claim anti-patterns.
 
 ## Settings Command
 
 The `/genesis settings` subcommand manages persistent user preferences
-stored in `.factory/settings.json`. Every skill declares its configurable
-settings in a `## Settings` section using a YAML schema. The settings
-command provides four operations.
+stored in `.factory/settings.json`. Keys use dot notation
+(`skill.setting_name`). Four operations:
 
-### `/genesis settings` (list)
-
-Display all settings from all installed skills, grouped by skill name.
-For each setting, show:
-
-- Name (fully qualified: `skill.setting_name`)
-- Current value (from `.factory/settings.json`, or "(default)" if using
-  the schema default, or "(unset)" if no value and no default)
-- Default value
-- Description
-
-### `/genesis settings get <key>`
-
-Retrieve a single setting's current value, default, and type. The key
-uses dot notation: `skill.setting_name`.
-
-If the key does not match any declared setting, respond with an error
-directing the user to run `/genesis settings` to see available settings.
-
-### `/genesis settings set <key> <value>`
-
-Validate the value against the skill's declared schema before writing to
-`.factory/settings.json`. If valid, write the value. If invalid, show
-the error (type mismatch, out of range, not in enum values) and do not
-write.
-
-The set operation:
-
-1. Parses the key into skill name and setting name.
-2. Loads the schema from the skill's SKILL.md `## Settings` section.
-3. Validates the value against the schema (type, enum values, min/max).
-4. If valid, writes to `.factory/settings.json` under the skill's
-   namespace.
-5. If invalid, shows the error and does not write.
-
-### `/genesis settings reset <key>`
-
-Remove the stored value from `.factory/settings.json`, reverting the
-setting to its schema default. If the setting has no default, it becomes
-"unset" and will trigger first-run discovery on next use. This is the
-only way to re-trigger first-run discovery for a setting.
+- **`/genesis settings`** (list): Display all settings from all skills,
+  grouped by skill. Show name, current value, default, description.
+- **`/genesis settings get <key>`**: Show a single setting's value,
+  default, and type.
+- **`/genesis settings set <key> <value>`**: Validate against the
+  skill's declared schema (type, enum, min/max). Write if valid; show
+  error if not.
+- **`/genesis settings reset <key>`**: Remove stored value, revert to
+  schema default. Re-triggers first-run discovery if no default exists.
 
 ### Settings Protocol
 
-Every skill that declares settings follows this protocol on entry, after
-reading `.factory/state.json` and before executing its main logic:
-
-1. Parse the skill's `## Settings` YAML schema from its SKILL.md.
-2. Read `.factory/settings.json`. If missing, treat all settings as
-   unset.
-3. For each declared setting, resolve using this precedence: stored value
-   (highest), schema default, first-run discovery (prompt the user).
-4. Validate stored values against the schema. If invalid, log a warning
-   and use the default for the current session without modifying the
-   file.
-5. For settings with no stored value and no default, prompt the user,
-   validate input, and persist the chosen value.
+On skill entry (after reading state, before main logic): parse the
+skill's Settings YAML schema, read `.factory/settings.json`, resolve
+each setting by precedence (stored value > schema default > first-run
+prompt), validate, and persist any newly prompted values.
 
 ## Help Text
 
-When the user seems confused about what Factory does, where they are in
-the pipeline, or what to do next, show this:
-
-```text
-Factory guides you from idea to deployed product through these phases:
-
-  /ideation  -> Brainstorm and explore ideas
-  /spec      -> Turn idea into buildable specification
-  /prototype -> Quick throwaway implementations for feedback
-  /setup     -> Project scaffolding, CI/CD, infrastructure
-  /build     -> Agent teams construct the product
-  /retro     -> Team retrospective — mandatory after build
-  /qa        -> Structured quality control
-  /security  -> Security audit and hardening
-  /deploy    -> Push to production
-
-Coming in v1.1:
-  /monitor   -> Health monitoring and bug triage
-
-You can run the full pipeline with /genesis, or use any skill
-independently.
-Current status: [phase] ([X of 9] phases complete)
-```
+When the user seems confused, show the pipeline table from "The
+Pipeline" section above, append `/monitor` (coming in v1.1), and show
+current status: `[phase] ([X of 9] phases complete)`.
 
 ## Error Handling
 
-### Sub-skill fails
-
-Stay on the current phase. Do not advance. Diagnose what went wrong and
-either retry the sub-skill or ask the user how to proceed.
-
-### User rejects output
-
-Re-run the phase with the user's feedback incorporated. Do not advance
-until the user is satisfied.
-
-### Unexpected state
-
-If the state file is corrupted, references missing files, or is otherwise
-inconsistent, present what happened clearly and ask the user how to
-proceed. Do not guess or silently fix things.
-
-### Missing output files
-
-If output files referenced in state have been deleted from disk, detect
-this and offer to re-run the phase that produced them.
+- **Sub-skill fails**: Stay on current phase. Diagnose and retry or ask
+  the user.
+- **User rejects output**: Re-run with feedback. Do not advance.
+- **Unexpected state**: Present the problem clearly. Do not guess or
+  silently fix.
+- **Missing output files**: Detect and offer to re-run the producing
+  phase.
 
 ## Settings
 
