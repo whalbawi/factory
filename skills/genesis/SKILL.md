@@ -84,6 +84,12 @@ When `/genesis` is invoked, follow this sequence:
 
 ### Skill Parameters
 
+Read and execute ALL [MANDATORY] sections in
+[GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
+
+- `{PHASE_NAME}` = `genesis`
+- `{OUTPUT_FILES}` = `[".factory/state.json"]`
+
 Also read and follow the **Gate Verification** section in
 [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md).
 

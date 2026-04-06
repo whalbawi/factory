@@ -5,7 +5,7 @@ project root.
 
 | Skill | Spec file | Description |
 |-------|-----------|-------------|
-| `/genesis` | [SPEC-orchestration.md](SPEC-orchestration.md) | Pipeline sequencing and state management |
+| `/genesis` | [SPEC-genesis.md](SPEC-genesis.md) | Pipeline sequencing and state management |
 | `/genesis claim` | [SPEC-claim.md](SPEC-claim.md) | Codebase onboarding for existing projects |
 | `/genesis settings` | [SPEC-settings.md](SPEC-settings.md) | User preference persistence and settings management |
 | `/ideation` | [SPEC-ideation.md](SPEC-ideation.md) | Divergent brainstorming |

@@ -160,6 +160,8 @@ markers.
 
 - This check runs at most once per skill invocation. Do not re-check
   after updating.
+- This check is skipped by sub-agents spawned during `/build`. Only the
+  top-level skill invocation runs drift sync.
 - Do not create `CLAUDE.md` if it does not exist -- that is `/genesis`'s
   responsibility.
 - Do not modify content outside Factory markers.

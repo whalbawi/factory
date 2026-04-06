@@ -548,7 +548,7 @@ logical groups that share conventions and interfaces:
   | `/qa` | `specs/SPEC-qa.md` |
   | `/security` | `specs/SPEC-security.md` |
   | `/deploy` | `specs/SPEC-deploy.md` |
-  | `/genesis` | `specs/SPEC-orchestration.md` |
+  | `/genesis` | `specs/SPEC-genesis.md` |
   | `/genesis claim` | `specs/SPEC-claim.md` |
   | `/genesis settings` | `specs/SPEC-settings.md` |
   | `/spec` | `specs/SPEC-spec.md` |

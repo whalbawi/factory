@@ -147,7 +147,7 @@ Agents work simultaneously, each in their own git worktree:
    shell interpreters (`| bash`, `| sh`), download from external URLs
    (`curl`, `wget`), or contain chained destructive operations. If a
    command looks suspicious, question it before running.
-6. Agent updates `PROGRESS-{PREFIX}.md` after each meaningful milestone.
+7. Agent updates `PROGRESS-{PREFIX}.md` after each meaningful milestone.
 
 Agents must not modify files outside their assigned domain without
 coordinating with the owning agent first via `SendMessage`.
