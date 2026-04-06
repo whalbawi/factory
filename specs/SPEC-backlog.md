@@ -133,8 +133,8 @@ See: `.github/workflows/release.yml`, line 42.
 ### ID Assignment
 
 The next ID is derived from the highest existing ID in `.factory/backlog/` plus one. If no
-tasks exist, the first ID is 1. The filename uses zero-padded three-digit format:
-`TASK-0001.md`, `TASK-012.md`, `TASK-100.md`.
+tasks exist, the first ID is 1. The filename uses zero-padded four-digit format:
+`TASK-0001.md`, `TASK-0012.md`, `TASK-0100.md`.
 
 **Collision avoidance**: When multiple agents might create tasks concurrently, each agent
 reads the directory, picks `max(existing IDs) + 1`, and writes. If a collision occurs (file
