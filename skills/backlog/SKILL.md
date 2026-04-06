@@ -68,7 +68,7 @@ Create a new task.
 3. Read `.factory/backlog/` to find the highest existing ID. Next ID = max + 1.
    If no tasks exist, start at 1.
 4. Create `.factory/backlog/` directory if it does not exist.
-5. Write `.factory/backlog/TASK-{NNNN}.md` (NNN = zero-padded to 3 digits):
+5. Write `.factory/backlog/TASK-{NNNN}.md` (NNNN = zero-padded to 4 digits):
 
 ```yaml
 ---
@@ -235,7 +235,7 @@ Optional markdown body with description, context, references, and notes.
 ```
 
 **ID assignment**: max(existing IDs) + 1. If no tasks exist, start at 1.
-Filename is zero-padded to 3 digits: `TASK-0001.md`.
+Filename is zero-padded to 4 digits: `TASK-0001.md`.
 
 **Collision handling**: If the target file already exists (concurrent
 creation), increment the ID and retry.
