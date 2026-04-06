@@ -431,7 +431,8 @@ green on first checkout. Report all verification results to the user.
 
 ## Stack-Specific Patterns
 
-For stack-specific tooling choices, read `references/stack-patterns.md`.
+STOP. Read `references/stack-patterns.md` now and execute its instructions
+before proceeding. It contains the stack-specific tooling choices.
 
 ## Settings
 

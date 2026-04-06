@@ -230,8 +230,9 @@ Write the spec to `SPEC.md` in the working directory.
 
 Adapt to the product. Omit inapplicable sections, add ones the product demands.
 
-Read `references/spec-template.md` for the complete master spec template,
-the domain decomposition template, and the agent assignment matrix template.
+STOP. Read `references/spec-template.md` now and execute its instructions
+before proceeding. It contains the complete master spec template, the
+domain decomposition template, and the agent assignment matrix template.
 
 ### Writing Principles
 
@@ -394,9 +395,10 @@ Rules, Agent Communication, etc.) and writes them with
 project-specific sections and writes them with
 `<!-- spec:project:start/end -->` markers.
 
-Read `references/claude-template.md` for the normal flow vs. standalone
-fallback logic, the spec-owned sections template, the standalone fallback
-process-rules template, and the generation rules.
+STOP. Read `references/claude-template.md` now. Follow its steps before
+proceeding. It contains the normal flow vs. standalone fallback logic, the
+spec-owned sections template, the standalone fallback process-rules
+template, and the generation rules.
 
 ---
 

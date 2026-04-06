@@ -24,6 +24,14 @@ settings against the declared schema in the `## Settings` section of this
 skill file. Use stored values where present, defaults where not, and prompt
 for any setting with no default and no stored value.
 
+After resolving each setting, validate it against the skill's declared
+schema. If a stored value does not match the declared type (boolean,
+number, string, enum), enum values, or min/max constraints, ignore the
+invalid value, use the schema default, and warn the user:
+
+    WARNING: Setting "{key}" has invalid value "{value}".
+    Expected: {type constraint}. Using default: {default}.
+
 ---
 
 ## First-Run Onboarding [MANDATORY]
