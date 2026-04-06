@@ -66,6 +66,19 @@ for file in "${skill_files[@]}"; do
     done
     errors=$((errors + 1))
   fi
+
+  # --- Combined size report (informational) ---
+  refs_dir="$(dirname "$file")/references"
+  if [[ -d "$refs_dir" ]]; then
+    skill_lines=$(wc -l < "$file" | tr -d ' ')
+    refs_lines=0
+    while IFS= read -r -d '' ref_file; do
+      ref_count=$(wc -l < "$ref_file" | tr -d ' ')
+      refs_lines=$((refs_lines + ref_count))
+    done < <(find "$refs_dir" -name "*.md" -print0 2>/dev/null)
+    total=$((skill_lines + refs_lines))
+    echo "INFO: skills/${skill_name}: ${skill_lines} lines (SKILL.md) + ${refs_lines} lines (references/) = ${total} total context"
+  fi
 done
 
 echo ""

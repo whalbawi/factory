@@ -61,3 +61,26 @@ jobs:
         run: |
           chmod +x scripts/check-skill-size.sh
           bash scripts/check-skill-size.sh
+
+  symlinks:
+    name: Symlink Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Verify GLOBAL-REFERENCE.md symlinks
+        run: |
+          errors=0
+          for skill_dir in skills/*/; do
+            skill=$(basename "$skill_dir")
+            [ "$skill" = "references" ] && continue
+            link="$skill_dir/GLOBAL-REFERENCE.md"
+            if [ ! -L "$link" ]; then
+              echo "ERROR: $link is not a symlink"
+              errors=$((errors + 1))
+            elif [ ! -e "$link" ]; then
+              echo "ERROR: $link is a broken symlink"
+              errors=$((errors + 1))
+            fi
+          done
+          echo "Symlink check: $errors error(s)."
+          [ "$errors" -eq 0 ] || exit 1

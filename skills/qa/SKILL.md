@@ -81,9 +81,13 @@ Run the test suite with coverage instrumentation using the commands from
    unspecified).
 4. Record raw coverage numbers for the report.
 
-If the test suite fails to run at all (missing dependencies, broken config),
-halt and produce a `QA-REPORT.md` with `status: failed` and the failure
-reason.
+**STOP.** If the test suite fails to run at all (missing dependencies, broken
+config, compilation errors), do not proceed to Step 2. Write `QA-REPORT.md`
+with `status: failed` and the failure reason, then exit.
+
+If any critical findings emerge during coverage analysis (e.g., entire domains
+with 0% coverage, test infrastructure fundamentally broken), present findings
+to the user immediately before continuing to Step 2.
 
 ### Step 2 — Test Quality Audit
 
@@ -138,6 +142,9 @@ Probe these categories methodically:
 Write tests for any edge cases discovered. If an edge case reveals a bug,
 document it in the Issues Found section of the report AND fix it. The report
 is the audit trail; the fix is the remediation. Both are required.
+
+If edge case hunting reveals a bug (especially a data-loss or security-related
+bug), present findings to the user immediately before continuing to Step 5.
 
 ### Step 5 — Regression Check
 
