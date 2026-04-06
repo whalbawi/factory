@@ -1,6 +1,6 @@
 {
   "name": "factory",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "A pipeline of Claude Code skills that takes software products from idea to production.",
   "author": {
     "name": "whalbawi"
