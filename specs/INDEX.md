@@ -18,6 +18,7 @@ project root.
 | `/security` | [SPEC-security.md](SPEC-security.md) | Security audit and hardening |
 | `/deploy` | [SPEC-deploy.md](SPEC-deploy.md) | Deployment and promotion |
 | `/bugfix` | [SPEC-bugfix.md](SPEC-bugfix.md) | Structured bug triage and compressed pipeline |
+| `/tasks` | [SPEC-tasks.md](SPEC-tasks.md) | Backlog tracker with CRUD and auto-capture |
 | Global reference | [SPEC-global-reference.md](SPEC-global-reference.md) | Shared conventions extracted into single file |
 | Sprints | [SPEC-sprints.md](SPEC-sprints.md) | Sprint execution model (cross-cutting) |
 
