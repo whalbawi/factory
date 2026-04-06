@@ -71,7 +71,7 @@ that are not acted on immediately. See [Auto-Capture Convention](#auto-capture-c
 
 ### Directory Structure
 
-```
+```text
 .factory/
   tasks/
     TASK-001.md
