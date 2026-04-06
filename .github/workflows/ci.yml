@@ -50,3 +50,14 @@ jobs:
         run: |
           chmod +x scripts/check-contracts.sh
           bash scripts/check-contracts.sh .
+
+  skill-lint:
+    name: Skill Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Check skill size and structure
+        run: |
+          chmod +x scripts/check-skill-size.sh
+          bash scripts/check-skill-size.sh

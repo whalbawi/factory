@@ -97,8 +97,6 @@ contradictions, refuses to move forward on vague foundations, and pushes back
 when answers don't hold up. A spec built on hand-wavy inputs produces
 hand-wavy output. Discovery is where rigor starts.
 
-### Mindset
-
 ### Skill Parameters
 
 Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERENCE.md):
@@ -106,27 +104,19 @@ Read and execute ALL [MANDATORY] sections in [GLOBAL-REFERENCE.md](GLOBAL-REFERE
 - `{PHASE_NAME}` = `spec`
 - `{OUTPUT_FILES}` = `["SPEC.md", "CLAUDE.md", "design-tokens.json"]`
 
-- **You are not a stenographer.** Your job is to understand the product well
-  enough to build it, not to record what the user said. If something doesn't
-  make sense, say so.
-- **Push back.** If the user gives a vague answer ("it should be fast",
-  "standard auth", "nice UI"), do not accept it. Ask what "fast" means in
-  numbers. Ask which auth flow. Ask what "nice" looks like concretely. Vague
-  inputs produce vague specs.
-- **Name contradictions immediately.** If the user says "simple MVP" but
-  describes 15 features, call it out. If they want "real-time" but also
-  "serverless with cold starts", surface the tension. Do not silently collect
-  conflicting requirements.
-- **Say no.** If scope is unrealistic, if the tech choice doesn't fit the
-  problem, if the user is solving the wrong problem — say so directly with
-  reasoning. Propose an alternative. Being agreeable is not being helpful.
-- **Demand specifics.** "What happens when X fails?" is always a valid
-  question. "Walk me through exactly what the user sees" is always a valid
-  request. Abstractions are not requirements.
+- **You are not a stenographer.** Understand the product well enough to build
+  it. If something doesn't make sense, say so.
+- **Push back.** Reject vague answers ("it should be fast", "standard auth").
+  Ask what "fast" means in numbers. Vague inputs produce vague specs.
+- **Name contradictions immediately.** "Simple MVP" + 15 features = conflict.
+  Surface tensions. Do not silently collect conflicting requirements.
+- **Say no.** Unrealistic scope, wrong tech choice, wrong problem — say so
+  with reasoning. Propose alternatives. Agreeable is not helpful.
+- **Demand specifics.** "What happens when X fails?" and "Walk me through
+  exactly what the user sees" are always valid. Abstractions are not
+  requirements.
 - **Hold the line on coherence.** Every answer must fit with every other
-  answer. When a new piece of information contradicts an earlier one, stop
-  and resolve it before continuing. Do not accumulate contradictions hoping
-  they'll sort themselves out later.
+  answer. Resolve contradictions before continuing — do not accumulate them.
 
 ### Calibrate Depth
 
@@ -138,132 +128,51 @@ Assess the user's starting point from their first message and pick a track:
 | Partial concept ("CLI tool that syncs dotfiles across machines") | **Focused discovery** — clarify core, probe edges | 3–6 |
 | Detailed vision ("React dashboard with auth, these 5 endpoints...") | **Fast-path** — challenge assumptions, fill gaps, confirm | 1–3 |
 
-Even on the fast-path, do not rubber-stamp. A detailed description is not
-necessarily a coherent one. Probe for contradictions, missing error handling,
-and unstated assumptions.
+Even on the fast-path, do not rubber-stamp. Probe for contradictions,
+missing error handling, and unstated assumptions.
 
 ### Discovery Areas
 
-These are not sequential steps. They are **dimensions of understanding**.
-Every user response potentially updates multiple dimensions. After each
-response, reassess which dimension has the most uncertainty and probe there
-next.
+These are **dimensions of understanding**, not sequential steps. After each
+user response, reassess which dimension has the most uncertainty and probe
+there next. Ask **1--3 questions per message**. Skip areas already addressed.
 
-**Problem & Purpose**
-
-- What problem does this solve? What's the current workaround?
-- What does success look like concretely — not "users are happy" but
-  observable, testable outcomes?
-- Why does this need to exist? Is there an existing tool that already does
-  this? If so, what's specifically wrong with it?
-
-**Users & Context**
-
-- Who uses it? What's their technical level?
-- Is there an existing codebase, repo, or system this extends?
-- How many users? 1, 10, 1000, 1M? This changes everything about the
-  architecture.
-
-**Core Functionality**
-
-- What are the 3–5 most important actions?
-- For each: trigger → input → expected output. No exceptions — if the user
-  can't describe the input and output, the feature isn't understood well
-  enough.
-- What is explicitly out of scope? Push for this — unbounded scope is the #1
-  spec killer.
-- What's the single most important thing this product does? If you had to
-  ship only one feature, which one?
-
-**Platform & Stack**
-
-- Form factor: CLI, web app, API, library, desktop app, extension, bot, etc.
-- Tech stack preferences or mandates — and *why*. "I like React" is different
-  from "the team has 3 years of React experience." Challenge arbitrary
-  choices.
-- OS/environment constraints, offline requirements
-
-**Data & State**
-
-- What's stored? Where? Who owns it?
-- Privacy, compliance, or sensitivity concerns?
-- What's the source of truth? If there are multiple data stores, how do they
-  stay consistent?
-
-**Integrations**
-
-- External services, APIs, auth requirements
-- Interop with existing tools or workflows
-- What happens when an external dependency is down? This is not optional —
-  every integration needs a failure mode.
-
-**Hard Constraints**
-
-- Performance/latency/throughput targets — in numbers, not adjectives
-- Budget, timeline, licensing, regulatory mandates
-- Non-negotiable technical requirements (must run offline, must be single
-  binary, etc.)
-
-**Visual Identity** *(mandatory for any project with a user-facing interface)*
-
-Do not skip this for UI projects. Users rarely volunteer visual preferences
-unprompted -- you must ask.
-
-- What should this look and feel like? Ask explicitly.
-- Reference sites or apps: "Is there a product whose visual style you
-  admire?" (e.g., "clean like Linear", "bold like Stripe", "minimal like
-  iA Writer"). Users think in references, not hex codes.
-- Theme preference: light, dark, system-adaptive, or no preference.
-- Density: compact (data-heavy), comfortable (consumer), spacious
-  (editorial).
-- Any brand constraints: existing colors, logos, fonts that must be used.
-
-The Product Design agent translates references into concrete design
-constraints and produces `design-tokens.json`. Always confirm the
-interpreted constraints with the user before proceeding.
-
-**Complexity Assessment** *(informs decomposition and agent assignment)*
-
-- How many distinct technical concerns are there? (UI, API, storage, auth,
-  infra, data pipeline, ML, etc.)
-- Are there natural ownership boundaries where one part could be built
-  independently?
-- Which specialist agents will be needed and where?
-
-Ask **1--3 questions per message**. Skip areas the user has already addressed.
+- **Problem & Purpose**: What problem? Current workaround? Observable success
+  criteria? Why does this need to exist vs. existing tools?
+- **Users & Context**: Who uses it? Technical level? Existing codebase? Scale
+  (1, 10, 1000, 1M users -- changes everything)?
+- **Core Functionality**: 3--5 most important actions, each with trigger →
+  input → expected output. What's explicitly out of scope? What's the single
+  most important feature?
+- **Platform & Stack**: Form factor (CLI, web, API, library, etc.). Tech
+  stack preferences and *why*. OS/environment constraints.
+- **Data & State**: What's stored, where, who owns it? Privacy/compliance?
+  Source of truth and consistency model?
+- **Integrations**: External services, APIs, auth. Failure modes for every
+  dependency (not optional).
+- **Hard Constraints**: Performance targets in numbers. Budget, timeline,
+  licensing, regulatory mandates. Non-negotiable technical requirements.
+- **Visual Identity** *(mandatory for UI projects)*: Ask explicitly -- users
+  rarely volunteer this. Reference sites ("clean like Linear", "bold like
+  Stripe"). Theme, density, brand constraints. The Product Design agent
+  translates into `design-tokens.json`. Confirm with user before proceeding.
+- **Complexity Assessment**: How many distinct technical concerns? Natural
+  ownership boundaries? Which specialist agents needed where?
 
 ### Techniques
 
-**Concrete over abstract.** When answers are vague, ask for a specific
-scenario: "Walk me through a typical session from open to close." One good
-scenario is worth five abstract requirement statements. If the user can't
-walk through a scenario, the feature isn't ready to spec.
-
-**Propose and react.** When the user is stuck, offer a concrete option:
-"Would a single YAML config file work, or do you need per-project
-overrides?" Reacting to a proposal is easier than generating requirements
-from scratch. But be honest about tradeoffs — don't present the easy option
-without mentioning what it costs.
-
-**Playback.** Every 3–4 exchanges, summarize understanding in 2–3 sentences.
-Ask the user to confirm or correct. Catches drift early. Use playback
-aggressively when the conversation feels like it's meandering.
-
-**Challenge feasibility.** If what's described is impractical (scope too large
-for the platform, fundamental technical barriers, conflicting requirements),
-say so immediately. Propose a feasible alternative. Do not silently collect
-an infeasible spec. Be specific about *why* it's infeasible — "that would
-require X which conflicts with your constraint Y."
-
-**Expose hidden complexity.** Users routinely underestimate: auth, error
-handling, multi-tenancy, offline/sync, migrations, and "admin" features. When
-these are relevant, ask about them even if the user didn't bring them up.
-"You mentioned multiple users — how do you handle permissions?" is never a
-wasted question.
-
-**Cut scope proactively.** If the user describes more than what's realistic
-for a v1, say so. Propose what to cut and why. A focused product that ships
-beats an ambitious one that doesn't.
+- **Concrete over abstract.** Ask for specific scenarios, not abstractions.
+  If the user can't walk through a scenario, the feature isn't ready to spec.
+- **Propose and react.** Offer concrete options when the user is stuck. Be
+  honest about tradeoffs.
+- **Playback.** Every 3--4 exchanges, summarize in 2--3 sentences. Confirm
+  or correct.
+- **Challenge feasibility.** Surface impractical requirements immediately
+  with specific reasons. Propose alternatives.
+- **Expose hidden complexity.** Probe auth, error handling, multi-tenancy,
+  offline/sync, migrations, admin features even if not mentioned.
+- **Cut scope proactively.** If scope exceeds a realistic v1, say so and
+  propose what to cut.
 
 ### Red Flags — Stop and Resolve
 
@@ -292,8 +201,8 @@ Move to the Architect only when:
 - Remaining unknowns are implementation decisions the Architect can make
   autonomously, not product decisions
 
-Announce the transition: "I have a clear picture. Handing off to the
-Architect to produce the spec."
+Announce: "I have a clear picture. Handing off to the Architect to produce
+the spec."
 
 ---
 
@@ -310,8 +219,8 @@ single Agent tool call:
   return a summary of what was produced, any unresolved issues, and open
   questions for the user.
 
-The Architect runs autonomously from here. The top-level Claude waits for the
-Architect to return before proceeding to Phase 3 (Validation).
+The Architect runs autonomously. Top-level Claude waits for it to return
+before proceeding to Phase 3 (Validation).
 
 ---
 
@@ -319,107 +228,10 @@ Architect to return before proceeding to Phase 3 (Validation).
 
 Write the spec to `SPEC.md` in the working directory.
 
-Adapt to the product. Omit sections that don't apply. Add sections the
-product demands.
+Adapt to the product. Omit inapplicable sections, add ones the product demands.
 
-### Master Spec Structure
-
-```markdown
-# [Product Name] — Specification
-
-## Overview
-- **One-liner**: What this does in one sentence.
-- **Problem**: What it solves, and what the current alternative is.
-- **Target user**: Who, and their technical level.
-- **Success criteria**: Observable outcomes that mean v1 is working.
-
-## Scope
-### In scope (v1)
-Ordered list of features/capabilities by priority. Item 1 is the last thing
-to cut; the final item is the first to cut if implementation hits a wall.
-
-For each item:
-- Description
-- Concrete example (sample input → expected output, or scenario walkthrough)
-- Edge cases and error behavior
-
-### Out of scope (v1)
-Explicit exclusions. Anything a reasonable person might assume is included
-but isn't.
-
-### Future considerations
-Ideas surfaced during discovery, parked for later. Not commitments.
-
-## Scenarios
-Key end-to-end workflows described as concrete narratives:
-
-**Scenario: [Name]**
-1. User does X with input Y
-2. System responds with Z
-3. User sees / gets / receives W
-
-Include the happy path and 1–2 important failure/edge paths per scenario.
-
-## Data Model
-- Entities and their attributes
-- Relationships
-- Storage location and format (files, DB, in-memory, external service)
-- Data the user owns vs. data fetched from external sources
-
-## External Interfaces
-- APIs consumed (with auth method)
-- APIs exposed (with endpoint sketches if relevant)
-- File formats read/written
-- Integration points with other tools
-
-## Constraints
-- Hard performance/latency/throughput targets
-- Platform and environment requirements
-- Mandatory tech stack choices
-- Licensing or compliance requirements
-
-## UI/UX Overview
-*(Include only if the product has a user-facing interface.)*
-- Key screens, views, or command structure
-- Navigation or interaction flow
-- Important look-and-feel preferences expressed by the user
-
-## Domain Decomposition
-*(See Phase 3 for full structure.)*
-
-## Agent Assignments
-*(See Phase 3 for full structure.)*
-
-## Sprint Plan
-*(Produced during Phase 2b when the project has multiple sprints.
-Omitted for single-sprint projects with 8 or fewer tasks.)*
-
-| Sprint | Tasks | Priority Tier | Dependencies |
-|--------|-------|---------------|--------------|
-| 1 | T1, T2, T3, T4 | P0 (core functionality) | None |
-| 2 | T5, T6, T7 | P1 (essential features) | Sprint 1 complete |
-
-### Sprint 1: [Goal]
-- **Tasks**: T1 (description), T2, T3, T4
-- **Parallel batches**: Batch 1 [T1], Batch 2 [T2, T3], Batch 3 [T4]
-- **Checkpoint criteria**: [Concrete, testable statement of what this sprint delivers]
-
-### Sprint 2: [Goal]
-- **Tasks**: T5, T6, T7
-- **Parallel batches**: Batch 1 [T5, T6, T7]
-- **Checkpoint criteria**: [Concrete, testable statement]
-
-## Decision Log
-Assumptions and judgment calls made during spec writing. Each entry:
-- **Decision**: What was decided
-- **Rationale**: Why (user stated, inferred from context, or best judgment)
-- **Reversible**: Yes/No — flags decisions the user should double-check
-
-## Open Questions
-Unresolved items with disposition:
-- **Agents decide during spec generation**: [item] — criteria or heuristic
-- **Requires user input before proceeding**: [item] — what specifically is needed
-```
+Read `references/spec-template.md` for the complete master spec template,
+the domain decomposition template, and the agent assignment matrix template.
 
 ### Writing Principles
 
@@ -460,75 +272,17 @@ Aim for 2–5 domains.
 
 ### Interface Contracts
 
-For every domain boundary:
-
-```markdown
-## Domain Decomposition
-
-### Domains
-
-#### [domain-name]
-- **Owns**: What this domain is solely responsible for
-- **Tech stack**: Language/framework if constrained
-- **Build order**: Can start immediately / blocked by [other domain]
-
-### Interface Contracts
-
-#### [domain-a] → [domain-b]: [contract name]
-- **Mechanism**: REST API / gRPC / function call / shared file / message queue
-- **Contract**:
-  - Endpoint or function signature
-  - Request shape (with example)
-  - Response shape (with example)
-  - Error cases and codes
-- **Owner**: Which domain owns the contract definition (the provider)
-
-### Shared Definitions
-- **Entity schemas**: Canonical definitions for cross-boundary entities
-- **Error format**: Standard error response shape
-- **Auth token format**: If multiple domains validate auth
-- **Naming conventions**: Path style, field casing, enum format
-
-### Build Order
-1. `storage` — no dependencies
-2. `auth` — depends on storage
-3. `api` — depends on storage + auth
-4. `frontend` — depends on api contracts (can stub)
-```
+For every domain boundary, define contracts using the domain decomposition
+template in `references/spec-template.md`. Each contract specifies: the
+mechanism, endpoint or function signature, request/response shapes with
+examples, error cases, and the owning domain.
 
 ### Agent Assignment Matrix
 
-The Architect produces an explicit assignment table in the master spec:
-
-```markdown
-## Agent Assignments
-
-| Domain | Backend | Frontend | DevOps | Security | QA | Product Design | Tech Writing |
-|--------|---------|----------|--------|----------|----|----------------|--------------|
-| api    | ✓       |          | ✓      | ✓        | ✓  |                | ✓            |
-| frontend |       | ✓        |        | ✓        | ✓  | ✓              |              |
-| storage | ✓      |          | ✓      | ✓        | ✓  |                |              |
-| auth   | ✓       |          |        | ✓        | ✓  |                | ✓            |
-
-### Execution Plan
-
-**Parallel batch 1** (no dependencies):
-- storage × [Backend, DevOps, Security, QA]
-
-**Parallel batch 2** (depends on storage):
-- auth × [Backend, Security, QA, Tech Writing]
-
-**Parallel batch 3** (depends on storage + auth):
-- api × [Backend, DevOps, Security, QA, Tech Writing]
-
-**Parallel batch 4** (depends on api contracts):
-- frontend × [Frontend, Security, QA, Product Design]
-
-Within each batch, all agent calls execute in parallel.
-```
-
-The execution plan respects both domain dependency order (topological sort)
-and maximizes parallelism within each batch.
+The Architect produces an explicit assignment table using the template in
+`references/spec-template.md`, showing which agents are assigned to each
+domain plus an execution plan that respects domain dependency order
+(topological sort) and maximizes parallelism within each batch.
 
 ### Sprint Plan
 
@@ -574,166 +328,8 @@ Each agent receives: the master spec, its domain context (ownership,
 contracts, shared definitions), and its role-specific instructions. Agents in
 later batches also receive the domain specs produced by earlier batches.
 
-#### Agent Base Prompt
-
-Every agent receives this context, filled in by the Architect:
-
-```text
-You are the {agent.role} specialist for the [{domain.name}] domain of a
-larger system. A Software Architect has defined the master spec and your
-assignment. Stay strictly within your role and domain scope.
-
-## Master Spec
-{masterSpec}
-
-## Your Domain
-- **Name**: {domain.name}
-- **Owns**: {domain.owns}
-- **Tech stack**: {domain.techStack}
-- **Depends on**: {domain.dependencies}
-
-## Interface Contracts You Provide
-{domain.exposedContracts}
-
-## Interface Contracts You Consume
-{domain.consumedContracts}
-
-## Shared Definitions
-{sharedDefinitions}
-
-## Prior Specs (from domains you depend on)
-{priorSpecs — empty for batch 1, populated for later batches}
-
----
-
-{agentRoleInstructions}
-
-Write your output as your section of `specs/SPEC-{domain.name}.md`.
-
-Be concrete. Use actual names, types, and structures. Do not restate the
-master spec — reference it, extend it. Stay dense: no filler.
-```
-
-#### Role-Specific Instructions
-
-**Backend**
-
-```text
-Produce a domain spec covering:
-1. Internal architecture: components, modules, key abstractions. Name the
-   structs/classes/modules.
-2. Data ownership: what this domain stores, schema details, migrations.
-3. Contract implementation: for each interface you provide, detail the
-   implementation approach. For each you consume, detail call patterns
-   and failure handling.
-4. Performance-critical paths and optimization approach.
-5. Build plan: ordered implementation steps, each independently testable.
-```
-
-**Frontend**
-
-```text
-Produce a domain spec covering:
-1. Component hierarchy: top-level layout, page components, shared components.
-   Name them.
-2. State management: what state lives where (local, global store, URL, server).
-   Data flow for key interactions.
-3. Routing structure and navigation flow.
-4. API integration: which contracts are consumed, loading/error states,
-   optimistic updates if applicable.
-5. Accessibility requirements: keyboard nav, screen reader, ARIA patterns.
-6. Build plan: ordered implementation steps, each independently testable.
-```
-
-**DevOps**
-
-```text
-Produce a domain spec covering:
-1. Build pipeline: steps from commit to deployable artifact. Linting, testing,
-   building, packaging.
-2. CI/CD: trigger conditions, environments (alpha/staging/prod), promotion gates.
-3. Containerization: Dockerfile strategy, base images, multi-stage builds
-   if applicable.
-4. Infrastructure: what's needed (compute, storage, networking, DNS, CDN).
-   Infrastructure-as-code approach if relevant.
-5. Monitoring and observability: what to measure, alerting thresholds,
-   log aggregation.
-6. Environment configuration: secrets management, env vars, config files.
-7. Deployment environments: three-environment promotion model —
-   alpha (opt-in dev validation), staging (mirrors prod, promoted after QA),
-   prod (promoted after security + user confirmation). Separate configs,
-   separate secrets per environment.
-```
-
-**Security**
-
-```text
-Produce a domain spec covering:
-1. Threat model: enumerate attack surfaces for this domain. What can go wrong.
-2. Auth/authz: how identity and permissions are enforced within this domain.
-   Token validation, session handling, permission checks.
-3. Input validation: all external inputs, validation rules, sanitization.
-4. Secrets management: what secrets exist, how they're stored and rotated.
-5. Dependency audit: known-vulnerable patterns to avoid, supply chain concerns.
-6. Compliance: relevant regulatory requirements and how they're met.
-```
-
-**QA**
-
-```text
-Produce a domain spec covering:
-1. Test strategy: unit/integration/e2e split and rationale for this domain.
-2. Test plan: specific test cases derived from the domain's scenarios and
-   edge cases. Include inputs and expected outputs.
-3. Integration test boundaries: what requires other domains, minimal stubs
-   needed for isolation.
-4. Acceptance criteria: for each feature in this domain, the observable
-   conditions that confirm it works.
-5. Regression scope: what existing behavior must be preserved as new
-   features are added.
-6. Non-functional tests: performance, load, security (surface-level)
-   if applicable.
-```
-
-**Product Design**
-
-```text
-Produce a domain spec covering:
-1. Information architecture: what content and actions are exposed to the user
-   in this domain. Hierarchy and grouping.
-2. User flows: step-by-step interaction sequences for key tasks. Include
-   decision points and error recovery.
-3. Interaction patterns: form behavior, feedback mechanisms, loading states,
-   empty states, error states.
-4. Wireframe descriptions: for each key screen/view, describe layout, content
-   zones, and interactive elements in enough detail to implement without
-   a visual mockup.
-5. Design system constraints: typography, spacing, color usage rules,
-   component reuse expectations.
-6. Copy guidelines: tone, terminology, error message style, label conventions.
-7. Design tokens: produce a `design-tokens.json` file in the project root
-   following the schema in `skills/references/design-tokens-schema.json`.
-   Populate it with concrete values derived from the user's visual identity
-   preferences (gathered during discovery). This file is the single source
-   of truth for visual design -- all build agents reference it instead of
-   hardcoding colors, fonts, or spacing.
-```
-
-**Tech Writing**
-
-```text
-Produce a domain spec covering:
-1. Documentation inventory: what docs are needed for this domain (API
-   reference, user guide, developer guide, CLI help, README section).
-2. API documentation: for each exposed contract, the doc structure —
-   endpoint, params, examples, error codes, rate limits.
-3. User-facing copy: onboarding flow text, help text, tooltips, error
-   messages. Provide draft copy where possible.
-4. Developer onboarding: what a new contributor needs to know to work on
-   this domain. Setup, architecture overview, key decisions.
-5. Changelog strategy: what constitutes a notable change, format, audience.
-6. README contribution: this domain's section of the project README.
-```
+For each agent, read the base prompt template and role-specific instructions
+from `references/agent-prompts.md` and include them in the agent's prompt.
 
 ---
 
@@ -798,223 +394,9 @@ Rules, Agent Communication, etc.) and writes them with
 project-specific sections and writes them with
 `<!-- spec:project:start/end -->` markers.
 
-#### Normal Flow (CLAUDE.md Already Exists)
-
-When `CLAUDE.md` already exists on disk (the normal case when `/genesis` has
-run before `/spec`), the Architect:
-
-1. Reads the existing `CLAUDE.md`.
-2. Looks for `<!-- spec:project:start -->` and `<!-- spec:project:end -->`
-   markers.
-3. If markers exist, replaces the content between them with the updated
-   spec-owned sections.
-4. If markers do not exist, appends the spec-owned sections (inside markers)
-   after the Factory-owned sections (or at the end of the file if no Factory
-   markers are found).
-5. Does NOT modify anything inside
-   `<!-- factory:process-rules:start/end -->` markers.
-
-#### Standalone Fallback (No CLAUDE.md)
-
-When `CLAUDE.md` does not exist (standalone `/spec` invocation without a prior
-`/genesis` run), the Architect generates the full file for backward
-compatibility. This includes both Factory-owned and spec-owned sections so that
-the project is fully functional without `/genesis`.
-
-The full fallback template includes all sections from both the spec-owned
-template below and the process-rules template from `/genesis`. In this case,
-Factory markers are still written around the process-rules sections so that
-`/genesis` can claim ownership later if it runs.
-
-#### Spec-Owned Sections Template
-
-```markdown
-<!-- spec:project:start -->
-## Project Summary
-[1-2 paragraph summary derived from SPEC.md Overview section.]
-
-## Architecture
-
-**Tech stack:** [Languages, frameworks, databases, infrastructure from the spec.]
-
-**Components:**
-- **[Component name]**: [What it does, how it communicates.]
-[One bullet per major component/domain.]
-
-## Technical Standards
-- **Markdown**: Line-wrap at 100 characters. Only use ASCII characters.
-[Add project-specific standards from the spec: code style, naming conventions,
- formatting rules, etc.]
-
-## Quality Standards
-Quality is non-negotiable. Every agent MUST uphold these standards at all times.
-
-### Code Coverage
-The project targets **100% code coverage**. Every new feature, bug fix, or
-refactor MUST include tests that cover all code paths -- happy paths, error
-paths, and edge cases. If a line of code exists, a test must exercise it.
-Coverage regressions are treated as build failures.
-
-[Insert project-specific coverage commands and thresholds here, grouped by
- component. Derive from the tech stack.]
-
-### Test Quality
-Tests MUST be meaningful. Do not write tests that exist solely to inflate
-coverage numbers. Each test must assert observable behavior that matters. If
-a test would still pass after deleting the code it covers, it is a bad test.
-
-### CI Health
-The DevOps agent MUST routinely inspect GitHub Actions health:
-- **No false positives**: A flaky or spurious CI failure MUST be investigated
-  and fixed immediately. If a test fails intermittently, the root cause must be
-  found and resolved -- do not re-run and hope for green.
-- **No false negatives**: CI must actually catch real problems. Periodically
-  verify that disabling a feature or introducing a known bug causes the expected
-  gate to fail.
-- **Pipeline hygiene**: Unused workflows, stale caches, and unnecessary steps
-  must be cleaned up. CI should be fast and reliable.
-
-### CI Pipeline Inspection
-Every 5 PRs merged to main, the DevOps agent MUST audit the GitHub Actions
-pipeline:
-- **False positives**: Introduce a known bug or disable a feature and verify
-  the expected CI gate catches it.
-- **False negatives**: Investigate any intermittent failures, disabled checks,
-  or tests that pass trivially (would still pass if the code under test were
-  deleted).
-Results are documented in `PROGRESS-OPS.md`.
-
-### Code Review Rigor
-Every PR must be reviewed with the assumption that bugs exist in it. Reviewers
-must check:
-- Edge cases and error handling
-- Test coverage of the changed code paths
-- Consistency with existing patterns and contracts
-- Security implications of the change
-
-Do not approve a PR because it "looks fine." Verify it.
-
-## Key Features
-[Bulleted list of v1 features derived from the spec's In Scope section.]
-<!-- spec:project:end -->
-```
-
-#### Standalone Fallback: Process Rules Template
-
-When generating the full file in standalone mode (no existing CLAUDE.md), append
-the Factory process-rules sections after the spec-owned sections. Use the same
-template that `/genesis` uses, wrapped in Factory markers:
-
-```markdown
-<!-- factory:process-rules:start -->
-## Mandatory Process Rules
-The following rules MUST be followed by each Claude process/agent, for each
-change being made. There are no exceptions.
-
-### Lifecycle of a Change
-
-#### Codebase Exploration
-Each process/agent MUST explore the relevant portions of the codebase as
-indicated by the task at hand.
-
-#### Worktree Isolation
-Each Claude process/agent MUST work in a separate git worktree and associated
-branch. Create the worktree as a sibling directory (`[project]-wt-<name>`) to
-the project source root, and prefix the branch name with `bug/`, `feat/`, etc.
-
-#### Change Implementation Loop
-Always implement a change in small incremental commits. A commit MUST be
-composed of a self-contained unit of logic that positively improves the overall
-system. No commit MUST break any test in the repository. Before committing a
-change to `git`, make sure all tests pertinent to the component you are working
-on run successfully, and make sure that the code format and lint checks pass.
-Rebase on top of `main` frequently to reduce the chances of merge conflicts.
-
-**Squash before merge**: Each PR MUST be merged as a single commit. Before the
-final push, squash all commits on the branch into one via interactive rebase
-(`git rebase -i origin/main`, mark all but the first as `squash`). Write a
-meaningful commit message that describes _what_ and _why_.
-
-Once you are done working on your branch, make sure you run the full test suite.
-If a test fails anywhere, think hard about why it failed and bias towards fixing
-the root cause rather than artificially making the test pass.
-
-[Insert project-specific test, lint, format, and type-check commands here,
- grouped by component. Derive from the tech stack and domain specs.]
-
-#### Pull Request
-Once a branch passes the required gates, the process/agent rebases the branch on
-top of `main` and then creates a GitHub PR and monitors CI to make sure all gates
-pass. In case of failure, the process/agent applies the "Change Implementation
-Loop" process to unblock the CI job. Upon success, the process/agent notifies
-the team lead that the PR is ready for merge.
-
-It is the responsibility of the team lead to merge outstanding PRs. The team lead
-MUST come up with an ordering that aims to minimize merge conflicts. The only
-allowed merge strategy is "rebase+merge". Once a PR is merged, the merging agent
-MUST clean up immediately:
-
-1. Delete the remote branch: `git push origin --delete <branch-name>`
-2. Remove the local worktree: `git worktree remove <worktree-path>`
-3. Delete the local branch: `git branch -D <branch-name>`
-
-### Mandatory Retro After Build
-After the build phase completes and all PRs are merged, the team MUST run
-`/retro` before proceeding to QA. This is not optional -- it captures process
-learnings while they are fresh. The retro output (`RETRO-{date}.md`) is
-reviewed by the team lead before QA begins.
-
-### Self-Updating Context (CLAUDE.md Auto-Amendment)
-CLAUDE.md MUST be amended whenever a learning or course correction occurs:
-- **Autonomous**: When any process/agent discovers something important during
-  development (e.g., a new convention, a gotcha, a pattern that works or fails),
-  they MUST update the relevant section of CLAUDE.md.
-- **User-directed**: When the user gives an instruction that changes how the
-  project works, the receiving agent MUST update CLAUDE.md immediately.
-
-CLAUDE.md is the project's living source of truth. Stale context leads to
-repeated mistakes.
-
-### Progress Tracking
-Every code change MUST be tracked in the relevant `PROGRESS-<prefix>.md` file
-using the established format (Task ID, Description, Difficulty, Acceptance
-Criteria, Status, Notes). After updating the component ledger, the change MUST
-be rolled up into `PROGRESS.md` by the team lead. This MUST NEVER be skipped --
-untracked work is invisible work, and invisible work causes coordination failures.
-
-| Agent                | Prefix | Scope                                    |
-|----------------------|--------|------------------------------------------|
-| Software Architect   | ARC    | Cross-cutting architecture, spec consistency |
-[One row per assigned specialist agent, with prefix and scope derived from the
- agent assignment matrix.]
-
-## Agent Communication
-Agents should DM each other directly (via SendMessage) for technical questions,
-API contract clarifications, and coordination -- don't wait for the team lead to
-relay. Route status updates and task completions through the team lead as usual.
-<!-- factory:process-rules:end -->
-```
-
-#### Generation Rules
-
-- **Derive, don't invent.** Every section must trace back to the master spec
-  or domain specs. Do not add requirements not in the spec.
-- **Fill in concrete commands.** The test/lint/format sections must have
-  actual runnable commands, derived from the tech stack choices in the spec.
-  Do not leave placeholders.
-- **Agent table must match assignments.** The Progress Tracking table must
-  list exactly the agents assigned in the master spec, with appropriate
-  prefixes and scopes.
-- **Project name in worktree pattern.** Replace `[project]` with the actual
-  project name.
-- **Spec-owned sections only (normal flow).** When CLAUDE.md already exists,
-  only write the sections inside `<!-- spec:project:start/end -->` markers.
-  Do not touch Factory-owned process rules -- they are `/genesis`'s
-  responsibility.
-- **Full file (standalone fallback).** When no CLAUDE.md exists, generate
-  both spec-owned and Factory-owned sections for backward compatibility.
-  Use appropriate markers for each so that `/genesis` can claim ownership
-  later.
+Read `references/claude-template.md` for the normal flow vs. standalone
+fallback logic, the spec-owned sections template, the standalone fallback
+process-rules template, and the generation rules.
 
 ---
 

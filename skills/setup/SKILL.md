@@ -233,72 +233,7 @@ a warning rather than failing.
 
 #### 4b. Generate Deployment Configs
 
-Generate three `fly.toml` variants. Each shares the same base structure but differs in
-app name, scaling, and auto-stop behavior.
-
-**Alpha** (`fly.alpha.toml`) — minimal resources, auto-stops when idle:
-
-```toml
-app = "{app}-alpha"
-primary_region = "iad"
-
-[build]
-
-[http_service]
-  internal_port = 8080
-  force_https = true
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 0
-
-[[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
-
-[checks]
-  [checks.health]
-    type = "http"
-    port = 8080
-    path = "/health"
-    interval = "30s"
-    timeout = "5s"
-```
-
-Key difference from prod: `min_machines_running = 0` so the app auto-stops when idle
-to save costs, and a longer health check interval (30s vs 15s).
-
-**Staging** (`fly.staging.toml`) — mirrors prod configuration:
-
-```toml
-app = "{app}-staging"
-primary_region = "iad"
-
-[build]
-
-[http_service]
-  internal_port = 8080
-  force_https = true
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 1
-
-[[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
-
-[checks]
-  [checks.health]
-    type = "http"
-    port = 8080
-    path = "/health"
-    interval = "15s"
-    timeout = "5s"
-```
-
-Staging mirrors prod: same region, same VM size, same scaling. Anything that passes
-staging will behave identically in prod.
-
-**Prod** (`fly.toml`) — production configuration:
+Generate three `fly.toml` variants sharing a common base structure:
 
 ```toml
 app = "{app}"
@@ -326,15 +261,23 @@ primary_region = "iad"
     timeout = "5s"
 ```
 
-Replace `{app}` with the actual project name in all three files. Adjust
-`primary_region`, `internal_port`, and VM sizing based on what the spec requires.
+Per-environment overrides:
+
+| File | `app` | `min_machines_running` | `interval` | Notes |
+|---|---|---|---|---|
+| `fly.alpha.toml` | `{app}-alpha` | 0 | 30s | Auto-stops when idle to save costs |
+| `fly.staging.toml` | `{app}-staging` | 1 | 15s | Mirrors prod exactly |
+| `fly.toml` | `{app}` | 1 | 15s | Production config |
+
+Replace `{app}` with the actual project name. Adjust `primary_region`, `internal_port`,
+and VM sizing based on what the spec requires.
 
 #### 4c. Dockerfile
 
 Generate a `Dockerfile` using multi-stage build pattern (builder stage + minimal runtime
 stage). A single Dockerfile is shared across all three environments — the `fly.*.toml`
-files control which app the image deploys to. See the stack-specific patterns section
-below for base image and build command details per language.
+files control which app the image deploys to. See `references/stack-patterns.md` for
+base image and build command details per language.
 
 #### 4d. Health Check Endpoint
 
@@ -488,84 +431,7 @@ green on first checkout. Report all verification results to the user.
 
 ## Stack-Specific Patterns
 
-### Node.js / TypeScript
-
-| Concern          | Tool / Config                                              |
-|------------------|------------------------------------------------------------|
-| Package manager  | Use what the spec says. Default to `pnpm` if unspecified.  |
-| Linter           | ESLint with flat config (`eslint.config.js`). Include      |
-|                  | `@typescript-eslint/parser` and                            |
-|                  | `@typescript-eslint/eslint-plugin`.                        |
-| Formatter        | Prettier with minimal config (printWidth, semi,            |
-|                  | singleQuote).                                              |
-| Type checker     | `tsc --noEmit` (strict mode enabled).                      |
-| Test runner      | Vitest (default) or Jest if specified. Configure coverage   |
-|                  | with `v8` provider.                                        |
-| Build            | `tsc` for libraries, bundler (esbuild/vite) for apps.     |
-| Telemetry        | `@opentelemetry/sdk-node`,                                 |
-|                  | `@opentelemetry/auto-instrumentations-node`.               |
-| Dockerfile       | Node 22 alpine base, multi-stage with `pnpm deploy --prod` |
-|                  | or equivalent for minimal production image.                |
-
-### Python
-
-| Concern          | Tool / Config                                              |
-|------------------|------------------------------------------------------------|
-| Package manager  | `uv` (default) or `pip` if specified. Generate             |
-|                  | `pyproject.toml` with project metadata and dependencies.   |
-| Linter/formatter | `ruff` for both. Configure via `[tool.ruff]` in            |
-|                  | `pyproject.toml`.                                          |
-| Type checker     | `pyright` (default for stricter defaults) or `mypy`.       |
-| Test runner      | `pytest` with `pytest-cov` for coverage.                   |
-| Build            | `uv build` for packages, direct execution for apps.       |
-| Telemetry        | `opentelemetry-sdk`, `opentelemetry-instrumentation` with  |
-|                  | auto-instrumentation for frameworks (FastAPI, Flask,       |
-|                  | Django).                                                   |
-| Dockerfile       | Python 3.12 slim base, multi-stage with `uv pip install`  |
-|                  | in builder and copy of virtualenv to runtime.              |
-
-### Rust
-
-| Concern          | Tool / Config                                              |
-|------------------|------------------------------------------------------------|
-| Package manager  | `cargo` (standard). Use workspace layout if the spec has   |
-|                  | multiple domains.                                          |
-| Linter           | `clippy` with `-- -D warnings` to treat warnings as       |
-|                  | errors.                                                    |
-| Formatter        | `rustfmt` with default settings.                           |
-| Test runner      | `cargo test`. Use `cargo-llvm-cov` for coverage if         |
-|                  | specified.                                                 |
-| Build            | `cargo build --release`. Use workspace members for         |
-|                  | multi-crate projects.                                      |
-| Telemetry        | `tracing` crate with `tracing-opentelemetry` bridge and    |
-|                  | `opentelemetry-otlp` exporter.                             |
-| Dockerfile       | `rust:1.82-slim` builder, `debian:bookworm-slim` runtime.  |
-|                  | Statically link with `musl` for alpine if binary size is   |
-|                  | a concern.                                                 |
-
-### Go
-
-| Concern          | Tool / Config                                              |
-|------------------|------------------------------------------------------------|
-| Package manager  | Go modules (`go mod init`). Generate `go.mod` with correct |
-|                  | module path.                                               |
-| Linter           | `golangci-lint` with `.golangci.yml` enabling `govet`,     |
-|                  | `staticcheck`, `errcheck`, `gosec`, `unused` at minimum.   |
-| Formatter        | `gofmt` (standard, no configuration needed).               |
-| Test runner      | `go test ./...` with `-race` flag. Use `-coverprofile`     |
-|                  | for coverage.                                              |
-| Build            | `go build -o bin/` with appropriate `ldflags` for version  |
-|                  | embedding.                                                 |
-| Telemetry        | `go.opentelemetry.io/otel` SDK with `otlptracehttp`       |
-|                  | exporter and `otelhttp` middleware for HTTP servers.        |
-| Dockerfile       | `golang:1.23-alpine` builder, `alpine:3.20` runtime.      |
-|                  | Build with `CGO_ENABLED=0` for static binary.             |
-
-### Other Stacks
-
-For stacks not listed above, adapt by following the same pattern: identify the canonical
-package manager, linter, formatter, type checker (if applicable), test runner, and build
-tool. Use the most widely adopted tooling for that ecosystem.
+For stack-specific tooling choices, read `references/stack-patterns.md`.
 
 ## Settings
 
