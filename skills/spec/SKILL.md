@@ -230,9 +230,8 @@ Write the spec to `SPEC.md` in the working directory.
 
 Adapt to the product. Omit inapplicable sections, add ones the product demands.
 
-STOP. Read `references/spec-template.md` now and execute its instructions
-before proceeding. It contains the complete master spec template, the
-domain decomposition template, and the agent assignment matrix template.
+STOP. Read `references/spec-template.md` now. It contains the master spec,
+domain decomposition, and agent assignment matrix templates.
 
 ### Writing Principles
 
