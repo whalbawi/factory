@@ -21,11 +21,11 @@ deployment, confirms health, and produces a receipt.
 
 ## Environments
 
-| Environment | App Name         | Deploy Command                     | Gates Required           |
-|-------------|------------------|------------------------------------|--------------------------|
-| **Alpha**   | `{app}-alpha`    | `fly deploy --app {app}-alpha`     | None                     |
-| **Staging** | `{app}-staging`  | `fly deploy --app {app}-staging`   | QA pass                  |
-| **Prod**    | `{app}`          | `fly deploy --app {app}`           | QA pass + security clear |
+| Environment | App Name         | Deploy Command                          | Gates Required           |
+|-------------|------------------|-----------------------------------------|--------------------------|
+| **Alpha**   | `{app}-alpha`    | manifest `deploy_command` (alpha)       | None                     |
+| **Staging** | `{app}-staging`  | manifest `deploy_command` (staging)     | QA pass                  |
+| **Prod**    | `{app}`          | manifest `deploy_command` (prod)        | QA pass + security clear |
 
 - **Alpha** — development validation. No gate checks, no smoke tests, no
   health checks enforced.
@@ -152,8 +152,8 @@ Execute the deployment using values from the deployment manifest:
 
 Verification depends on the target environment.
 
-**Alpha** — no verification required. Deploy is complete once
-`fly deploy` succeeds.
+**Alpha** — no verification required. Deploy is complete once the
+deploy command succeeds.
 
 **Staging**:
 
@@ -207,9 +207,9 @@ alpha, tested by QA in staging, and cleared by security.
 
 If any post-deploy health check or smoke test fails on prod:
 
-1. **Immediately roll back** — run
-   `fly releases rollback --app {app}`. Do not wait for manual
-   intervention.
+1. **Immediately roll back** — run the `rollback_command` from the
+   deployment manifest for the target environment. Do not wait for
+   manual intervention.
 2. **Verify rollback** — hit the health check endpoint again to confirm
    the previous version is serving.
 3. **Record in receipt** — set `DEPLOY-RECEIPT.md` status to `ROLLED BACK`
@@ -229,8 +229,8 @@ If post-deploy verification fails on staging:
 
 1. Record the failure in `DEPLOY-RECEIPT.md` with `status: FAILED` and
    diagnostic details.
-2. Notify the user with the failure details and the rollback command:
-   `fly releases rollback --app {app}-staging`.
+2. Notify the user with the failure details and the rollback command
+   from the manifest (`rollback_command` for the staging environment).
 3. Do not auto-rollback — staging failures are not user-facing, so the
    user decides whether to roll back or investigate.
 
@@ -319,7 +319,8 @@ settings:
 - **Leaving a broken production deployment live.** If health checks fail
   on prod, roll back immediately. Do not "wait and see."
 - **Logging secrets.** Verify secrets exist but never echo or log their
-  values. Use `fly secrets list` (names only), not `fly secrets show`.
+  values. Use the manifest's `secrets_command` (names only), never
+  display secret values.
 - **Deploying to prod from a non-main branch.** Production deploys come
   from main. If the user wants to deploy a branch, confirm explicitly and
   document the deviation in the receipt.

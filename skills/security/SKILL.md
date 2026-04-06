@@ -69,6 +69,14 @@ For each vulnerability found:
 
 If no dependency manifest is found, document this as a gap and proceed.
 
+**STOP.** If a CRITICAL vulnerability is found during the dependency audit,
+record it immediately and inform the user before continuing. Do not wait until
+Step 6 to surface critical findings — the user needs to know now so they can
+begin remediation in parallel.
+
+If any CRITICAL dependency vulnerabilities are found, present findings to the
+user immediately before continuing to Step 2.
+
 ### Step 2: Static Analysis
 
 Scan the source code for common vulnerability patterns using stack-appropriate
@@ -95,6 +103,10 @@ For each domain in the project (or the whole project if single-domain):
 3. **Assess risk** — likelihood x impact, yielding CRITICAL / HIGH / MEDIUM / LOW.
 4. **Document mitigations** — both existing mitigations already in the code and
    mitigations that are still needed.
+
+If the threat model reveals high-risk attack surfaces (CRITICAL or HIGH threats
+with no existing mitigation), present findings to the user immediately before
+continuing to Step 4.
 
 ### Step 4: Auth Flow Review
 

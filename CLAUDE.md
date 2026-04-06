@@ -197,8 +197,9 @@ commit that already has the correct version and passing gate reports.
 Each action is idempotent. The tag is never moved or deleted.
 
 **Gate report naming:** Reports are versioned per development cycle:
-`QA-REPORT-v0.5.0.md`, `SECURITY-v0.5.0.md`. Previous versions'
-reports remain in the repo as a permanent audit trail.
+`QA-REPORT-v0.5.0.md`, `SECURITY-v0.5.0.md`. The current cycle's
+reports live at the repo root. After a release, old reports are
+archived to `reports/` as a permanent audit trail.
 
 #### Environments
 
