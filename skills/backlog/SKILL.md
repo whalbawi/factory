@@ -1,19 +1,19 @@
 ---
-name: tasks
+name: backlog
 description: Use when the user wants to track work items, create a backlog, or manage
   tasks. Responds to "add a task", "show tasks", "what's in the backlog", "update task",
   "close task", "task board", or when any skill needs to defer work for later. Provides
-  CRUD operations on a file-based task store in .factory/tasks/. Not for sprint planning
+  CRUD operations on a file-based task store in .factory/backlog/. Not for sprint planning
   (use /spec) or bug tracking (use /bugfix).
 ---
 
-# /tasks -- Backlog Tracker
+# /backlog -- Backlog Tracker
 
 Persistent work-item tracking across sessions. Tasks are stored as individual
-markdown files with YAML frontmatter in `.factory/tasks/`. Both humans and
+markdown files with YAML frontmatter in `.factory/backlog/`. Both humans and
 agents can create, query, update, and close work items.
 
-`/tasks` is a utility skill, not a pipeline phase. It does not appear in the
+`/backlog` is a utility skill, not a pipeline phase. It does not appear in the
 `/genesis` sequence and does not modify the main pipeline's phase state.
 
 **Subcommands**: `add`, `list` (default), `show`, `update`, `close`, `board`.
@@ -27,8 +27,8 @@ agents can create, query, update, and close work items.
 | **Required inputs** | Subcommand (defaults to `list` if omitted)                |
 | **Optional inputs** | Task title, task ID, flags (--type, --priority, --status, |
 |                     | --sprint, --title)                                        |
-| **Outputs**         | Task files in `.factory/tasks/`, stdout summaries,        |
-|                     | `.factory/tasks/board.html` (board subcommand only)       |
+| **Outputs**         | Task files in `.factory/backlog/`, stdout summaries,        |
+|                     | `.factory/backlog/board.html` (board subcommand only)       |
 | **Failure output**  | Error message to stdout                                   |
 
 ---
@@ -52,8 +52,8 @@ Parse the user's input to determine the subcommand and arguments.
 3. Remaining tokens are arguments and flags for that subcommand.
 
 If the first token does not match a known subcommand, treat the entire input
-as a title for the `add` subcommand (e.g., `/tasks Fix the flaky test` is
-equivalent to `/tasks add "Fix the flaky test"`).
+as a title for the `add` subcommand (e.g., `/backlog Fix the flaky test` is
+equivalent to `/backlog add "Fix the flaky test"`).
 
 ---
 
@@ -65,10 +65,10 @@ Create a new task.
 2. Parse optional flags:
    - `--type <bug|feature|debt|improvement>` -- defaults to `feature`.
    - `--priority <P0|P1|P2>` -- defaults to `P1`.
-3. Read `.factory/tasks/` to find the highest existing ID. Next ID = max + 1.
+3. Read `.factory/backlog/` to find the highest existing ID. Next ID = max + 1.
    If no tasks exist, start at 1.
-4. Create `.factory/tasks/` directory if it does not exist.
-5. Write `.factory/tasks/TASK-{NNN}.md` (NNN = zero-padded to 3 digits):
+4. Create `.factory/backlog/` directory if it does not exist.
+5. Write `.factory/backlog/TASK-{NNNN}.md` (NNN = zero-padded to 3 digits):
 
 ```yaml
 ---
@@ -90,7 +90,7 @@ sprint: null
 8. Confirm:
 
 ```text
-Created TASK-{NNN}: {title}
+Created TASK-{NNNN}: {title}
   Type: {type} | Priority: {priority} | Status: open
 ```
 
@@ -100,7 +100,7 @@ Created TASK-{NNN}: {title}
 
 Display all active tasks grouped by priority. This is the default subcommand.
 
-1. Read all `.factory/tasks/TASK-*.md` files.
+1. Read all `.factory/backlog/TASK-*.md` files.
 2. Parse YAML frontmatter from each file.
 3. Filter to `status` in (`open`, `in_progress`). Exclude `done` and `closed`.
 4. Group by priority: P0 first, then P1, then P2.
@@ -127,7 +127,7 @@ Display all active tasks grouped by priority. This is the default subcommand.
 7. If no active tasks exist:
 
 ```text
-No open tasks. Use /tasks add "<title>" to create one.
+No open tasks. Use /backlog add "<title>" to create one.
 ```
 
 ---
@@ -137,12 +137,12 @@ No open tasks. Use /tasks add "<title>" to create one.
 Display a single task's full details.
 
 1. Parse the ID. Accept bare numbers (`3`) or padded (`003`).
-2. Read `.factory/tasks/TASK-{NNN}.md`.
+2. Read `.factory/backlog/TASK-{NNNN}.md`.
 3. If the file does not exist: `Task {id} not found.`
 4. Display:
 
 ```text
-TASK-{NNN}: {title}
+TASK-{NNNN}: {title}
   Type: {type} | Priority: {priority} | Status: {status}
   Created: {date} by {created_by} | Sprint: {sprint or "--"}
 
@@ -164,7 +164,7 @@ Update one or more fields on an existing task.
 6. Confirm with a diff of changed fields:
 
 ```text
-Updated TASK-{NNN}:
+Updated TASK-{NNNN}:
   status: open -> in_progress
   sprint: -- -> 2
 ```
@@ -182,7 +182,7 @@ Close a task. Shorthand for `update <id> --status closed`.
 5. Confirm:
 
 ```text
-Closed TASK-{NNN}: {title}
+Closed TASK-{NNNN}: {title}
 ```
 
 ---
@@ -191,11 +191,11 @@ Closed TASK-{NNN}: {title}
 
 Render an HTML kanban board and open it in the browser.
 
-1. Read all `.factory/tasks/TASK-*.md` files.
+1. Read all `.factory/backlog/TASK-*.md` files.
 2. Parse YAML frontmatter from each file.
 3. Group into four columns by status: Open, In Progress, Done, Closed.
 4. Within each column, sort by priority (P0 first) then by ID ascending.
-5. Generate `.factory/tasks/board.html` with:
+5. Generate `.factory/backlog/board.html` with:
    - Four columns: Open, In Progress, Done, Closed.
    - Each card: ID, title, type badge, priority badge.
    - Priority colors: P0 = red border, P1 = amber border, P2 = grey border.
@@ -203,21 +203,21 @@ Render an HTML kanban board and open it in the browser.
    - Inline CSS only (no external dependencies).
    - Responsive layout.
    - Page title: "Factory Task Board".
-6. Open in browser: `open .factory/tasks/board.html`
+6. Open in browser: `open .factory/backlog/board.html`
 
-The board is a snapshot. Re-run `/tasks board` to refresh.
+The board is a snapshot. Re-run `/backlog board` to refresh.
 
 If no tasks exist:
 
 ```text
-No tasks to display. Use /tasks add "<title>" to create one.
+No tasks to display. Use /backlog add "<title>" to create one.
 ```
 
 ---
 
 ## Task File Schema
 
-Each task lives at `.factory/tasks/TASK-{NNN}.md` with this structure:
+Each task lives at `.factory/backlog/TASK-{NNNN}.md` with this structure:
 
 ```yaml
 ---
@@ -235,7 +235,7 @@ Optional markdown body with description, context, references, and notes.
 ```
 
 **ID assignment**: max(existing IDs) + 1. If no tasks exist, start at 1.
-Filename is zero-padded to 3 digits: `TASK-001.md`.
+Filename is zero-padded to 3 digits: `TASK-0001.md`.
 
 **Collision handling**: If the target file already exists (concurrent
 creation), increment the ID and retry.
@@ -258,7 +258,7 @@ not acted on immediately. This is opt-in per skill.
 **When NOT to auto-capture:**
 
 - Gate-blocking findings (these halt the pipeline, not defer).
-- Items already tracked in `.factory/tasks/`.
+- Items already tracked in `.factory/backlog/`.
 - Vague suggestions without actionable scope.
 
 **Auto-captured task conventions:**
@@ -267,8 +267,8 @@ not acted on immediately. This is opt-in per skill.
 - Body references the source report (e.g., "See QA-REPORT.md, finding #3").
 - The capturing skill determines type and priority based on the finding.
 
-Skills that auto-capture write `TASK-{NNN}.md` files directly using the same
-ID assignment logic as the `add` subcommand. They do not invoke `/tasks` as a
+Skills that auto-capture write `TASK-{NNNN}.md` files directly using the same
+ID assignment logic as the `add` subcommand. They do not invoke `/backlog` as a
 skill -- they write the file themselves.
 
 ---
@@ -295,15 +295,15 @@ settings:
 
 ## Anti-Patterns
 
-- **Using /tasks for sprint planning.** `/tasks` is a backlog store, not a
+- **Using /backlog for sprint planning.** `/backlog` is a backlog store, not a
   planner. Use `/spec` Phase 2b to plan sprints -- it reads the backlog
   automatically.
 - **Creating vague tasks.** "Fix things" is not a task. Every task must have a
   concrete title and enough body context to act on without the creating
   conversation.
 - **Duplicating bug tracking.** `/bugfix` has its own state in
-  `.factory/state.json`. Do not create `/tasks` entries for bugs that are
-  already tracked by `/bugfix`. Use `/tasks` for bugs discovered outside the
+  `.factory/state.json`. Do not create `/backlog` entries for bugs that are
+  already tracked by `/bugfix`. Use `/backlog` for bugs discovered outside the
   bugfix pipeline.
 - **Treating the board as live.** The board is a generated snapshot. Editing
   `board.html` does nothing -- the source of truth is the `TASK-*.md` files.
