@@ -7,7 +7,7 @@ setup, build, retrospective, QA, security, and deployment.
 
 ## What Factory Does
 
-Factory provides 10 Claude Code skills that cover the entire software
+Factory provides 12 Claude Code skills that cover the entire software
 development lifecycle. You can run the full pipeline with `/genesis`, or
 invoke any skill independently.
 
