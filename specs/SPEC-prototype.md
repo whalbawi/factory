@@ -1,230 +1,115 @@
-# /prototype — Quick Throwaway Implementations for Early Feedback
+# /prototype -- Quick Throwaway Implementations for Early Feedback
 
-The `/prototype` skill generates 2-3 meaningfully different throwaway implementations of a
-spec'd product so the user can experience real alternatives before committing to a full build.
-Prototype code is disposable — it validates the *approach*, not the *implementation*.
+The `/prototype` skill generates throwaway implementations so the user can experience real
+alternatives before committing to a full build. Prototype code is disposable -- it validates
+the *approach*, not the *implementation*. Supports two independent sub-phases: functional
+prototypes (architecture, interaction model) and visual prototypes (theme, colors, density).
 
 ## Contract
 
 | Aspect | Details |
 |--------|---------|
 | **Required inputs** | `SPEC.md` |
-| **Optional inputs** | `CLAUDE.md`, `specs/` |
-| **Outputs** | `prototypes/` directory, `PROTOTYPE-DECISION.md` |
+| **Optional inputs** | `CLAUDE.md`, `specs/`, `design-tokens.json` |
+| **Outputs** | `prototypes/` directory, updated `SPEC.md` (prototype decisions) |
 | **Failure mode** | Partial prototypes with issues documented in each prototype's README |
 
 ## Category
 
-Procedural skill — executes a defined sequence of steps with user decision points. No
+Procedural skill -- executes a defined sequence of steps with user decision points. No
 sub-agents are spawned. The skill runs as a single Claude Code session.
+
+## Sub-Phases
+
+Two independent sub-phases. The user picks either, both, or neither:
+
+- **Functional**: 2-3 architecturally different implementations (e.g., CLI vs TUI vs web,
+  monolith vs services). Explores *how it works*.
+- **Visual**: 2-3 visual treatments of the chosen functional direction using different
+  design token values. Explores *how it looks*.
 
 ## Process
 
 ### Step 1: Read Spec
 
-Read `SPEC.md` and any domain specs in `specs/` to understand core functionality, constraints,
-user preferences, and tech stack decisions. If `CLAUDE.md` exists, read it for project
-conventions and build commands.
+Read `SPEC.md` and any domain specs in `specs/`. Read `CLAUDE.md` if it exists for project
+conventions. Read `design-tokens.json` if it exists (needed for visual prototyping).
 
-Update `.factory/state.json` to record that `/prototype` has started (see State Tracking
-below).
+### Step 2: Choose Sub-Phases
 
-### Step 2: Identify Alternatives
+Ask the user which prototype phases to run: functional, visual, or both. If the user
+skips both, record the skip in state and exit.
 
-Determine 2-3 meaningfully different approaches. These are NOT minor variations — they must
-represent genuinely different tradeoffs:
+### Step 3: Functional Prototype (if selected)
+
+Determine 2-3 meaningfully different approaches. These must represent genuinely different
+tradeoffs, not cosmetic variations:
 
 - Different interaction models (CLI vs. TUI vs. web)
 - Different architectural approaches (monolith vs. services)
-- Different tech stack choices (if not constrained by spec)
-- Different feature emphasis (depth on feature A vs. breadth across A+B+C)
+- Different tech stack choices (when not constrained by the spec)
+- Different feature emphasis (depth on A vs. breadth across A+B+C)
 
-If the spec is simple enough that only one approach makes sense, produce one prototype with an
-explicit note that alternatives were considered but unnecessary.
+If the spec is simple enough that only one approach makes sense, produce one prototype with
+an explicit note explaining why.
 
-### Step 3: Build Prototypes
-
-For each alternative, create a directory under `prototypes/`:
+Prototypes are created under `prototypes/functional/`:
 
 ```text
 prototypes/
-  option-a-cli/
-    README.md
-    main.py         # (or whatever the implementation file is)
-  option-b-tui/
-    README.md
-    app.py
-  option-c-web/
-    README.md
-    server.py
+  functional/
+    option-a-cli/
+      README.md
+      main.py
+    option-b-tui/
+      README.md
+      app.py
 ```
 
-Each prototype must:
+Each prototype must be single-file or minimal-file, cover the core happy path only, actually
+run (verified before presenting), and include a `README.md`. Present tradeoffs neutrally.
 
-- Be a single-file or minimal-file implementation
-- Cover the core happy path only — no error handling, no edge cases, no tests
-- Actually run. Broken prototypes are useless. Verify execution before presenting.
-- Include a `README.md` with: what it demonstrates, how to run it, what is intentionally
-  missing
+### Step 4: Visual Prototype (if selected)
 
-### Step 4: Present and Compare
+Takes the functional winner (or the current spec if functional was skipped) and produces 2-3
+visual treatments by varying design token values. If `design-tokens.json` does not exist,
+generates a baseline from the spec's Visual Identity section. Each variant lives under
+`prototypes/visual/` with its own `design-tokens.json`. The chosen treatment's tokens are
+written to the project's `design-tokens.json`.
 
-Show each prototype to the user. For each, explain:
+### Step 5: Record Decision in SPEC.md
 
-- What it demonstrates well
-- What it sacrifices
-- Tradeoffs vs. the other alternatives
-
-Do not advocate for one option. Present the tradeoffs neutrally and let the user decide.
-
-### Step 5: Collect Decision
-
-The user picks a direction. Record the decision in `PROTOTYPE-DECISION.md` at the project
-root (see Output Template below).
+Prototype decisions are recorded directly in `SPEC.md` under a `## Prototype Decisions`
+section with subsections for Functional Direction, Visual Direction, and Spec Gaps
+Discovered. `PROTOTYPE-DECISION.md` is NOT created -- SPEC.md is the living source of
+truth for all product decisions.
 
 ### Step 6: Spec Gap Detection
 
-If prototyping reveals gaps, ambiguities, or contradictions in the spec, document them
-explicitly. Recommend re-running `/spec` for the affected areas before proceeding to `/setup`
-or `/build`.
-
-Common spec gaps surfaced by prototyping:
-
-- Interaction patterns that feel wrong when implemented
-- Performance characteristics that change the architectural approach
-- Missing API contracts discovered when wiring things together
-- Assumptions about data shape that do not hold
-
-Update `.factory/state.json` to record completion (see State Tracking below).
+Check for interaction patterns that feel wrong when implemented, performance characteristics
+that change the architectural approach, missing API contracts, and visual constraints that
+conflict with functional requirements. If gaps are found, document them in the Spec Gaps
+section and recommend re-running `/spec` for affected areas.
 
 ## State Tracking
 
-Every skill must update `.factory/state.json` on invocation and completion, even when run
-standalone (outside the `/genesis` orchestrator). Create the `.factory/` directory and
-`state.json` file if they do not exist.
-
-### On Start
-
-Set the `prototype` phase to `in_progress` with a `started_at` timestamp:
-
-```json
-{
-  "phases": {
-    "prototype": {
-      "status": "in_progress",
-      "started_at": "2026-04-03T12:00:00Z"
-    }
-  }
-}
-```
-
-If `.factory/state.json` does not exist, create it:
-
-```json
-{
-  "pipeline": "factory",
-  "current_phase": "prototype",
-  "phases": {
-    "prototype": {
-      "status": "in_progress",
-      "started_at": "2026-04-03T12:00:00Z"
-    }
-  }
-}
-```
-
-### On Completion
-
-Set the phase to `completed` with `completed_at` and `outputs`:
-
-```json
-{
-  "phases": {
-    "prototype": {
-      "status": "completed",
-      "started_at": "2026-04-03T12:00:00Z",
-      "completed_at": "2026-04-03T12:45:00Z",
-      "outputs": ["prototypes/", "PROTOTYPE-DECISION.md"]
-    }
-  }
-}
-```
-
-### On Failure
-
-Set the phase to `failed` with `failed_at` and `failure_reason`:
-
-```json
-{
-  "phases": {
-    "prototype": {
-      "status": "failed",
-      "started_at": "2026-04-03T12:00:00Z",
-      "failed_at": "2026-04-03T12:30:00Z",
-      "failure_reason": "Could not produce a runnable prototype — dependency X unavailable"
-    }
-  }
-}
-```
-
-## Output Template
-
-`PROTOTYPE-DECISION.md` at the project root:
-
-```markdown
-# Prototype Decision
-
-## Alternatives Explored
-
-1. [Name]: [One-line summary of approach and key tradeoff]
-2. [Name]: [One-line summary of approach and key tradeoff]
-3. [Name]: [One-line summary of approach and key tradeoff]
-
-## Decision
-
-Selected: [Name]
-Rationale: [Why the user chose this — in their words, not paraphrased]
-
-## Implications for Build
-
-- [What this choice means for architecture]
-- [What this choice means for tech stack]
-- [Features or patterns to carry forward from the prototype]
-
-## Spec Gaps Discovered
-
-- [Gap 1: description and affected spec section]
-- [Gap 2: description and affected spec section]
-- (or "None" if prototyping confirmed the spec is complete)
-
-## What to Discard
-
-Prototype code is throwaway. Do not copy-paste into production.
-The prototype validates the *approach*, not the *implementation*.
-```
+State tracking is handled via the standard GLOBAL-REFERENCE.md template with
+`{PHASE_NAME}` = `prototype` and `{OUTPUT_FILES}` = `["prototypes/"]`.
 
 ## Anti-Patterns
 
-- **Polishing prototypes.** Prototypes are disposable. Adding error handling, tests, input
-  validation, or documentation beyond the README defeats the purpose. The moment you start
-  polishing, you are building — not prototyping.
-
-- **Skipping the comparison.** The value of `/prototype` is in weighing alternatives against
-  each other. Producing one prototype and asking "does this look good?" is not prototyping —
-  it is a demo. Always produce at least two unless the spec genuinely admits only one approach.
-
+- **Polishing prototypes.** Prototypes are disposable. Adding error handling, tests, or
+  input validation defeats the purpose.
+- **Skipping the comparison.** Producing one prototype and asking "does this look good?" is
+  a demo, not prototyping. Always produce at least two unless the spec genuinely admits only
+  one approach.
 - **Letting prototype code leak into production.** Prototype code was built without tests,
-  error handling, security considerations, or maintainability. It must never be copied into
-  the production codebase. The prototype validates the direction; `/build` implements it
-  properly.
-
-- **Presenting broken prototypes.** A prototype that does not run teaches nothing. Always
-  verify that each prototype executes its happy path before presenting it to the user.
-
-- **Advocating for an option.** The skill presents tradeoffs neutrally. The user decides.
-  Pushing toward a preferred option undermines the purpose of exploring alternatives.
-
-- **Treating minor variations as alternatives.** "React with Tailwind" vs. "React with
-  vanilla CSS" is not a meaningful alternative. Alternatives must represent different
-  architectural or interaction tradeoffs — different enough that the user learns something
-  new from each one.
+  error handling, or security considerations. Never copy it into production.
+- **Presenting broken prototypes.** A prototype that does not run teaches nothing. Verify
+  each one before presenting.
+- **Advocating for an option.** Present tradeoffs neutrally. The user decides.
+- **Treating minor variations as alternatives.** Functional alternatives must differ in
+  architecture or interaction model. Visual alternatives must differ in design tokens -- not
+  just a single color change.
+- **Writing PROTOTYPE-DECISION.md.** Decisions go in SPEC.md. Do not create a separate
+  decision file.

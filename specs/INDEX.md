@@ -21,6 +21,14 @@ project root.
 | `/backlog` | [SPEC-backlog.md](SPEC-backlog.md) | Backlog tracker with CRUD and auto-capture |
 | Global reference | [SPEC-global-reference.md](SPEC-global-reference.md) | Shared conventions extracted into single file |
 | Sprints | [SPEC-sprints.md](SPEC-sprints.md) | Sprint execution model (cross-cutting) |
+| Skill discipline | [SPEC-skill-discipline.md](SPEC-skill-discipline.md) | Skill size limits and CI linting |
+| Settings inventory | [SETTINGS-INVENTORY.md](SETTINGS-INVENTORY.md) | Consolidated list of all Factory settings |
+
+## Staged
+
+| Topic | File | Description |
+|-------|------|-------------|
+| CLAUDE.md ownership | [STAGED-claude-md-ownership.md](STAGED-claude-md-ownership.md) | Transfer CLAUDE.md generation from `/spec` to `/genesis` |
 
 ## Deferred (v1.1)
 
