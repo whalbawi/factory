@@ -2,7 +2,7 @@
 
 ## Overview
 
-The global reference system eliminates instruction duplication across Factory's 10 skill
+The global reference system eliminates instruction duplication across Factory's 12 skill
 files by extracting shared conventions into a single `GLOBAL-REFERENCE.md` file in the
 `skills/references/` directory. Each skill directory gets a symlink to the canonical file and
 references only the sections it needs. Parameterized sections use placeholders that each
@@ -84,6 +84,12 @@ skills/
   spec/
     SKILL.md
     GLOBAL-REFERENCE.md          <-- symlink
+  bugfix/
+    SKILL.md
+    GLOBAL-REFERENCE.md          <-- symlink
+  backlog/
+    SKILL.md
+    GLOBAL-REFERENCE.md          <-- symlink
 ```
 
 ---
@@ -102,7 +108,7 @@ only when its `SKILL.md` explicitly references them.
 
 #### 1. Settings Protocol [MANDATORY]
 
-Identical across all 10 skills. No placeholders.
+Identical across all 12 skills. No placeholders.
 
 ```markdown
 ## Settings Protocol
@@ -111,11 +117,19 @@ Before starting, read `.factory/settings.json` and resolve this skill's
 settings against the declared schema in the `## Settings` section of this
 skill file. Use stored values where present, defaults where not, and prompt
 for any setting with no default and no stored value.
+
+After resolving each setting, validate it against the skill's declared
+schema. If a stored value does not match the declared type (boolean,
+number, string, enum), enum values, or min/max constraints, ignore the
+invalid value, use the schema default, and warn the user:
+
+    WARNING: Setting "{key}" has invalid value "{value}".
+    Expected: {type constraint}. Using default: {default}.
 ```
 
 #### 2. State Tracking [MANDATORY]
 
-Present in 9 skills (all except `/genesis` orchestrator, which manages state
+Present in 11 skills (all except `/genesis` orchestrator, which manages state
 differently -- it coordinates phases rather than reporting its own phase). Uses
 placeholders:
 `{PHASE_NAME}` and `{OUTPUT_FILES}`.
@@ -231,29 +245,60 @@ canonical template and updates them based on the
 After resolving settings but before executing main logic, check whether
 the project-level `CLAUDE.md` has drifted from the canonical content that
 Factory owns. Factory-owned content is any block delimited by
-`<!-- factory:*:start -->` / `<!-- factory:*:end -->` marker pairs.
+`<!-- factory:*:start -->` / `<!-- factory:*:end -->` marker pairs (e.g.,
+`factory:process-rules`, or any future marker namespace).
 
-Detection:
+### Detection
+
 1. Read `CLAUDE.md` in the project root. If it does not exist or contains
    no Factory marker pairs, skip this check.
 2. For each marker pair found, extract the content between the start and
    end markers.
 3. Compare each extracted block against the corresponding canonical
    template from the `/genesis` skill file. Ignore leading/trailing
-   whitespace when comparing.
+   whitespace when comparing. If all blocks match, no action is needed.
 
-Update:
+### Update
+
 If any block has drifted, gate on the `genesis.update_project_claude_md`
 setting:
-- "prompt" (default): Show a diff summary and ask the user to confirm.
-- "auto": Replace stale blocks silently.
-- "skip": Do nothing.
+- **`prompt`** (default): Show a short diff summary (sections
+  added/removed/changed) and ask the user to confirm before updating.
+- **`auto`**: Replace the stale blocks with the current canonical
+  content silently.
+- **`skip`**: Do nothing. Leave the stale content in place.
 
-Constraints:
-- Runs at most once per skill invocation.
-- Do not create `CLAUDE.md` if it does not exist.
+When updating, replace everything between each drifted start and end
+marker (inclusive of the markers themselves) with the current canonical
+content wrapped in fresh markers. Preserve all content outside Factory
+markers.
+
+### Constraints
+
+- This check runs at most once per skill invocation. Do not re-check
+  after updating.
+- This check is skipped by sub-agents spawned during `/build`. Only the
+  top-level skill invocation runs drift sync.
+- Do not create `CLAUDE.md` if it does not exist -- that is `/genesis`'s
+  responsibility.
 - Do not modify content outside Factory markers.
 ```
+
+#### 7. Spec Maintenance [MANDATORY]
+
+Runs after the skill's main logic completes, before output file handling. If
+the skill's work changed system behavior, update the relevant spec files in
+`specs/` to reflect the current state: remove sections for defunct behavior,
+update sections where implementation differs, add sections for undocumented
+behavior. Skipped if the skill's work did not change system behavior. No
+placeholders.
+
+#### 8. Output File Handling [MANDATORY]
+
+Runs after writing output files. Checks `global.open_report` from
+`.factory/settings.json`. If true, converts each output file to HTML and opens
+it in the browser. Applies to all skill output files: reports, decision
+documents, receipts, triage documents, and ideation output. No placeholders.
 
 ---
 
@@ -324,15 +369,17 @@ Read and follow the **Settings Protocol** and **State Tracking** sections in
 
 Sections marked `[M]` are mandatory and apply to all skills unconditionally.
 
-| Section              | genesis | build | deploy | ideation | prototype | qa  | retro | security | setup | spec |
-|----------------------|---------|-------|--------|----------|-----------|-----|-------|----------|-------|------|
-| Settings Protocol [M]|    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| Onboarding [M]       |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| State Tracking [M]   |   (1)   |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| Post-Merge Cleanup   |         |   Y   |        |          |           |     |       |          |       |      |
-| Gate Verification    |    Y    |       |   Y    |          |           |     |       |          |       |      |
-| Secrets Handling [M] |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
-| Drift Sync [M]       |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |
+| Section                | genesis | build | deploy | ideation | prototype | qa  | retro | security | setup | spec | bugfix | backlog |
+|------------------------|---------|-------|--------|----------|-----------|-----|-------|----------|-------|------|--------|---------|
+| Settings Protocol [M]  |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| Onboarding [M]         |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| State Tracking [M]     |   (1)   |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| Post-Merge Cleanup     |         |   Y   |        |          |           |     |       |          |       |      |        |         |
+| Gate Verification      |    Y    |       |   Y    |          |           |     |       |          |       |      |        |         |
+| Secrets Handling [M]   |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| Drift Sync [M]         |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| Spec Maintenance [M]   |    Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
+| Output File Handling [M]|   Y    |   Y   |   Y    |    Y     |     Y     |  Y  |   Y   |    Y     |   Y   |  Y   |   Y    |    Y    |
 
 Notes:
 
@@ -362,7 +409,7 @@ Notes:
 From the project root:
 
 ```bash
-for skill in genesis build deploy ideation prototype qa retro security setup spec; do
+for skill in genesis build deploy ideation prototype qa retro security setup spec bugfix backlog; do
   ln -sf ../references/GLOBAL-REFERENCE.md "skills/$skill/GLOBAL-REFERENCE.md"
 done
 ```

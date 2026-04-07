@@ -1,14 +1,14 @@
-# Orchestration — Domain Spec
+# Orchestration -- Domain Spec
 
 ## Overview
 
-This domain owns the `/genesis` orchestrator skill — the entry point that drives the user
-through the full pipeline. It manages phase sequencing, state persistence, phase transitions,
-backward navigation, and resumption after interruption.
+This domain owns the `/genesis` orchestrator skill -- the entry point that drives the user
+through the full 9-phase pipeline. It manages phase sequencing, state persistence, phase
+transitions, backward navigation, resumption after interruption, sprint loops during build,
+claim mode for onboarding existing codebases, and a settings command for managing persistent
+user preferences.
 
-## Internal Architecture
-
-### Pipeline State Machine
+## Pipeline State Machine
 
 The orchestrator models the pipeline as a state machine with forward progression and backward
 navigation:
@@ -18,384 +18,182 @@ idle -> ideation -> spec -> prototype -> setup -> build -> retro -> qa -> securi
   -> complete
          ^          ^        ^           ^        ^        ^        ^        ^
          |          |        |           |        |        |        |        |
-         +----------+--------+-----------+--------+--------+--------+--------+--- (backward jumps)
+         +----------+--------+-----------+--------+--------+--------+--------+--- (backward)
 ```
 
-Each state has four possible sub-states:
+Each state has five possible sub-states:
 
-- `pending` — not yet started
-- `in_progress` — currently executing
-- `completed` — finished and output verified
-- `skipped` — user chose to skip this phase (only for skippable phases)
+- `pending` -- not yet started
+- `in_progress` -- currently executing
+- `completed` -- finished and output verified
+- `skipped` -- user chose to skip this phase (only for skippable phases)
+- `partial` -- some artifacts exist but phase is not fully satisfied (written only by
+  claim mode)
 
-Note: `/ideation` (when used for existing products) is a **standalone skill** not part of the
-pipeline. It can be invoked at any time without affecting pipeline state. `/monitor` is
-deferred to v1.1.
+Skills reading state should treat `partial` the same as `pending` for gating purposes --
+they check for required input files, not phase status.
 
-### State Persistence
+## State Persistence
 
-State lives in `.factory/state.json`:
+State lives in `.factory/state.json`. The orchestrator participates in a shared state model
+where individual skills are also responsible for recording their own progress. Every skill
+reads and writes this file, whether invoked through the pipeline or standalone.
 
-```json
-{
-  "pipeline": "factory",
-  "project_name": "my-project",
-  "started_at": "2026-04-03T10:00:00Z",
-  "current_phase": "build",
-  "phases": {
-    "ideation": {
-      "status": "completed",
-      "started_at": "2026-04-03T10:00:00Z",
-      "completed_at": "2026-04-03T10:45:00Z",
-      "outputs": ["IDEATION.md"],
-      "skipped": false
-    },
-    "spec": {
-      "status": "completed",
-      "started_at": "2026-04-03T10:45:00Z",
-      "completed_at": "2026-04-03T12:00:00Z",
-      "outputs": [
-        "SPEC.md", "CLAUDE.md", "specs/SPEC-api.md", "specs/SPEC-frontend.md"
-      ],
-      "skipped": false
-    },
-    "prototype": {
-      "status": "skipped",
-      "skipped": true,
-      "skip_reason": "User chose to skip — spec is clear enough"
-    },
-    "setup": {
-      "status": "completed",
-      "started_at": "2026-04-03T12:05:00Z",
-      "completed_at": "2026-04-03T13:00:00Z",
-      "outputs": ["fly.toml", "Dockerfile", ".github/workflows/ci.yml"],
-      "skipped": false
-    },
-    "build": {
-      "status": "in_progress",
-      "started_at": "2026-04-03T13:00:00Z"
-    }
-  },
-  "resets": [
-    {
-      "timestamp": "2026-04-03T14:00:00Z",
-      "from_phase": "qa",
-      "to_phase": "spec",
-      "reason": "User wanted to revise the API design after QA revealed integration issues"
-    }
-  ]
-}
-```
+The state file tracks: `pipeline`, `project_name`, `started_at`, `current_phase`, `phases`
+(map of each phase to its status, timestamps, and outputs), and `resets` (audit trail of
+backward navigation jumps).
 
-State tracking is not exclusive to the `/genesis` orchestrator. Every skill updates
-`.factory/state.json` on invocation and completion, even when run standalone outside the
-pipeline. The orchestrator reads existing state but does not own it exclusively — it
-participates in a shared state model where individual skills are also responsible for
-recording their own progress.
+When a project is onboarded via `/genesis claim`, the state file also includes:
 
-### Phase Transition Logic
+- `claimed` (boolean) -- whether claim completed successfully
+- `claimed_at` (ISO 8601 timestamp) -- when claim finished
+- `claim_confidence` -- count of findings at each confidence level:
+  `{"high": N, "medium": N, "low": N}`
 
-At each phase boundary, the orchestrator:
+Phases backfilled by claim include `confidence` (high/medium/low) and `findings` (array of
+strings explaining what was detected).
 
-1. **Verifies outputs** — Checks that the completing phase produced its declared output
-   files. If outputs are missing, asks the user whether to re-run the phase or proceed
-   without them.
+If the state file exists but is malformed, back it up to `.factory/state.json.bak`, create a
+fresh state file, and inform the user.
 
-2. **Presents summary** — 2-3 sentence summary of what was produced. Highlights key
-   decisions or findings.
+## Opening Behavior
 
-3. **Offers options**:
+The skill uses the standard Skill Parameters pattern referencing GLOBAL-REFERENCE.md with
+`{PHASE_NAME}` = `genesis` and `{OUTPUT_FILES}` = `[".factory/state.json"]`. It also
+references the Gate Verification section.
 
-   - "Proceed to [next phase]" (default)
-   - "Review [current phase] output" (let user inspect before moving on)
-   - "Revise [current phase]" (re-run with adjustments)
-   - "Skip [next phase]" (if the next phase is skippable)
-   - "Go back to [phase]" (jump to any prior phase — see Backward Navigation)
+On invocation:
 
-4. **Updates state** — Records phase completion, advances `current_phase`.
+1. **Check for claim mode**: If the user invokes `/genesis claim` (or equivalent phrasing
+   like "onboard this codebase"), enter claim mode instead of normal pipeline flow.
+2. **Existing state**: If `.factory/state.json` exists, offer resumption. Verify output
+   files from completed phases still exist on disk.
+3. **Existing artifacts (no state)**: Scan for `SPEC.md`, project scaffolds, source code
+   with passing tests, and suggest a starting phase.
+4. **Greenfield**: Offer brainstorming or idea-first flow.
 
-Note: After `/build` completes, the orchestrator proceeds directly to `/retro`. The retro
-phase is mandatory and cannot be skipped — it captures learnings from the build while they
-are fresh.
+## Phase Transition Logic
 
-### Backward Navigation
+At each phase boundary:
 
-The pipeline supports jumping backward to any prior phase from any current phase. This
-allows the user to revisit earlier decisions when later phases reveal issues.
+1. **Verify outputs** -- check that the completing phase produced its declared output files.
+2. **Present summary** -- 2-3 sentence summary highlighting key decisions. Do not dump full
+   file contents.
+3. **Offer options** -- proceed (default), review output, revise, skip (if skippable), or go
+   back to a prior phase.
+4. **Update state** -- record completion, advance `current_phase`.
 
-#### Mechanics
+After `/build` completes, proceed directly to `/retro`. The retro phase is mandatory and
+cannot be skipped.
 
-When the user selects "Go back to [phase]":
+## Sprint Loop
 
-1. The orchestrator sets the target phase's status to `in_progress`.
-
-2. All phases after the target phase are reset to `pending`.
-
-3. A record is appended to the `resets` array in state:
-
-   ```json
-   {
-     "timestamp": "2026-04-03T14:00:00Z",
-     "from_phase": "qa",
-     "to_phase": "spec",
-     "reason": "User wanted to revise the API design after QA revealed integration issues"
-   }
-   ```
-
-4. Output files from reset phases are **not deleted** — they remain on disk but are
-   considered stale. They may need to be regenerated after the user works through the
-   phases again.
-
-5. The user is warned before the jump is executed:
-
-   ```text
-   Going back to spec will mark prototype, setup, build, retro, and qa as pending.
-   Their output files will be preserved but may need to be regenerated.
-   Proceed? [Y/n]
-   ```
-
-#### Constraints
-
-- The user can only jump backward, not forward past incomplete phases.
-- Jumping backward always resets everything after the target phase, even skipped phases.
-- The `resets` array provides an audit trail of all backward jumps for debugging and
-  analytics.
-
-### Resumption Logic
-
-When `/genesis` is invoked and `.factory/state.json` exists:
-
-1. Read state file
-2. Identify the last completed phase and the current phase
-3. Present status: "You've completed [phases]. Currently on [current phase]. Want to
-   continue, or start over?"
-4. If continuing, verify that output files from completed phases still exist. If any are
-   missing, flag it.
-5. Resume at the current phase.
-
-### Phase Skipping Rules
-
-| Phase | Skippable? | Condition |
-|-------|-----------|-----------|
-| `/ideation` | Yes | User already has a clear idea |
-| `/spec` | Yes | `SPEC.md` already exists |
-| `/prototype` | Yes | Spec is clear enough, or user wants to go straight to build |
-| `/setup` | Yes | Project is already scaffolded with CI/CD |
-| `/build` | No | This is the core of the pipeline |
-| `/retro` | No | Mandatory after build — captures learnings while fresh |
-| `/qa` | No | Quality is not optional |
-| `/security` | No | Security is not optional |
-| `/deploy` | Yes | User may want to deploy manually |
-
-### Entry at Any Phase
-
-The orchestrator supports starting at any phase, not just the beginning:
-
-1. User invokes `/genesis` with no prior state
-2. Orchestrator checks for existing artifacts:
-
-   - `SPEC.md` exists? -> can skip `/ideation` and `/spec`
-   - Project scaffold exists? -> can skip `/setup`
-   - Source code exists and tests pass? -> can skip `/build` (and `/retro`)
-
-3. Presents detected state: "I see you already have [artifacts]. Want to start from
-   [phase]?"
-4. User confirms or overrides.
-
----
-
-## Orchestrator Skill Structure
-
-```markdown
----
-name: factory
-description: Use when the user wants to "build a product", "start a project",
-  "go from idea to production", "use the factory pipeline", or needs to be
-  guided through the full process of ideating, speccing, prototyping, building,
-  reviewing, testing, securing, and deploying a software product. This is the
-  orchestrator for the entire Factory pipeline.
----
-
-# Factory: Idea to Production Pipeline
-
-[Full orchestrator instructions here — see the skill file specification below]
-```
-
-### Orchestrator Behavior Specification
-
-**Opening**: When invoked, the orchestrator:
-
-1. Checks for `.factory/state.json` — if exists, offer resumption
-2. Checks for existing artifacts (`SPEC.md`, source code, etc.) — if exist, offer to skip
-   completed phases
-3. If greenfield: "Let's build something. Do you have an idea already, or want to
-   brainstorm?"
-
-**Phase invocation**: The orchestrator does NOT directly execute phase logic. It:
-
-- Presents the phase purpose and what will happen
-- Guides the user to invoke the sub-skill (or invokes it automatically)
-- Waits for completion
-- Verifies outputs
-- Manages the transition
-
-**Error handling**:
-
-- Sub-skill fails: Stay on current phase, diagnose, retry or ask user
-- User rejects output: Re-run phase with user's feedback incorporated
-- Unexpected state: Present what happened and ask user how to proceed — don't guess
-
-**Completion**: When all phases are done (after `/deploy`):
-
-- Present a full summary of what was built
-- List all artifacts produced
-- Confirm the product is deployed
-- Suggest next steps: "You can run `/ideation` to brainstorm new features. `/monitor` is
-  coming in v1.1."
-
----
-
-## QA Perspective
-
-### Orchestrator Acceptance Criteria
-
-1. **Fresh start**: `/genesis` on empty repo starts at ideation/spec phase
-2. **Resumption**: `/genesis` with existing state file resumes correctly
-3. **Skip detection**: `/genesis` with existing SPEC.md offers to skip spec phase
-4. **Phase gating**: Cannot advance past retro, QA, or security if they report failures
-5. **State persistence**: State file is updated after every phase transition
-6. **Shared state**: Individual skills update `.factory/state.json` independently; the
-   orchestrator correctly reads state written by standalone skill invocations
-7. **All paths**: Every phase can be entered, completed, skipped (where allowed), and
-   re-run
-8. **Clean exit**: User can exit at any point and resume later
-9. **Backward navigation**: User can jump to any prior phase; later phases are reset to
-   pending; output files are preserved; resets array is updated; user is warned before
-   the jump
-10. **Retro is mandatory**: `/retro` always runs after `/build` and cannot be skipped
-
-### Backward Navigation Scenario
-
-1. User completes ideation, spec, setup, build, retro, and enters QA.
-2. QA reveals that the API contract in the spec is wrong.
-3. User selects "Go back to spec" at the QA phase boundary.
-4. Orchestrator warns: "Going back to spec will mark prototype, setup, build, retro, and
-   qa as pending. Their output files will be preserved but may need to be regenerated.
-   Proceed? [Y/n]"
-5. User confirms. State is updated: spec is `in_progress`, prototype/setup/build/retro/qa
-   are `pending`.
-6. A record is added to `resets` with `from_phase: "qa"`, `to_phase: "spec"`.
-7. User revises the spec and proceeds through the pipeline again.
-
-### Edge Cases
-
-- State file exists but is malformed — reset state, inform user
-- Output files referenced in state but deleted from disk — detect and re-run phase
-- User invokes a sub-skill directly while factory pipeline is active — state file should
-  not be corrupted; standalone skill writes are compatible with orchestrator reads
-- Two `/genesis` invocations simultaneously — not supported in v1, but must not corrupt
-  state file
-- Backward jump to a phase whose output files were manually edited — warn user that the
-  phase will overwrite those files if re-run
-
----
-
-## Product Design Perspective
-
-### Pipeline UX Flow
+When the build phase begins and `SPEC.md` contains a `## Sprint Plan` with more than one
+sprint, the orchestrator enters a sprint loop instead of a single `/build` invocation:
 
 ```text
-Welcome to Factory.
+for each sprint N in sprint_plan:
+  1. Invoke /build (builds sprint N only)
+  2. Verify /build outputs (PROGRESS.md updated, sprint N tasks merged)
+  3. If sprint_checkpoints != "skip":
+     a. Invoke /qa in sprint-scoped mode (sprint N)
+     b. If sprint_checkpoints == "full":
+        Invoke /security in sprint-scoped mode (sprint N)
+     c. If checkpoint fails:
+        Present findings, offer fix/override/abort
+  4. Present sprint summary
+  5. If confirm_phase_transition is true, wait for user confirmation
 
-[If resuming]
-> You've completed ideation, spec, and prototype.
-> Currently on: setup
-> Continue from setup? [Y/n]
-
-[If fresh]
-> Let's build something.
-> Do you already have an idea, or want to brainstorm? [idea / brainstorm]
-
---- Phase transition (after build) ---
-
-> Build complete. Here's what was produced:
-> - 12 source files across 3 domains
-> - All 47 tests passing
->
-> Moving to retro to capture learnings from the build.
-
---- Phase transition (after retro) ---
-
-> Retro complete. Key takeaways:
-> - [summary of learnings]
->
-> Ready for QA? [Y / review retro / revise / go back to build]
-
---- Phase transition ---
-
-> Spec complete. Here's what was produced:
-> - SPEC.md: [product name] — [one-liner]
-> - 3 domain specs: api, frontend, storage
-> - CLAUDE.md with build conventions
->
-> Key decisions:
-> - Tech stack: TypeScript, React, PostgreSQL
-> - Deployment: Fly.io
->
-> Ready to prototype? [Y / review spec / revise / skip / go back to ideation]
-
---- Backward navigation ---
-
-> Going back to spec will mark prototype, setup, build, retro, and qa as pending.
-> Their output files will be preserved but may need to be regenerated.
-> Proceed? [Y/n]
+After all sprints:
+  - Proceed to /retro (mandatory)
+  - Then /qa (full project pass)
+  - Then /security (full project pass)
+  - Then /deploy
 ```
 
-### Information Density
+Sprint progress is tracked in `phases.build.sprints` with `total`, `current`,
+`completed[]` (per-sprint timestamps, task counts, checkpoint results), and `overrides[]`.
 
-At each transition, present:
+On resumption, the orchestrator continues from the last incomplete sprint. Going back to
+`/spec` resets all sprint progress. Going back to `/build` (e.g., from `/retro`) resumes
+from the last incomplete sprint.
 
-- What was just done (1 sentence)
-- What was produced (file list)
-- Key decisions (2-3 bullets)
-- What's next (1 sentence + options, including backward navigation)
+## Backward Navigation
 
-Do NOT dump the full content of output files. The user can read them if they want.
-Summaries only.
+The user can jump backward to any prior phase. When selected:
 
----
+1. Warn which phases will be reset to `pending`.
+2. Set the target phase to `in_progress`.
+3. Reset all downstream phases to `pending` (including skipped).
+4. Append a record to `resets` with `timestamp`, `from_phase`, `to_phase`, and `reason`.
+5. Preserve output files on disk (stale, may need regeneration).
 
-## Tech Writing Perspective
+Only backward jumps are allowed, not forward past incomplete phases.
 
-### Orchestrator Help Text
+## Phase Skipping Rules
 
-When the user seems confused about what Factory does or where they are:
+| Phase        | Skippable? | Condition                                    |
+|--------------|------------|----------------------------------------------|
+| `/ideation`  | Yes        | User already has a clear idea                |
+| `/spec`      | Yes        | `SPEC.md` already exists                     |
+| `/prototype` | Yes        | Spec is clear enough, or user wants to skip  |
+| `/setup`     | Yes        | Project already scaffolded with CI/CD        |
+| `/build`     | **No**     | Core of the pipeline                         |
+| `/retro`     | **No**     | Mandatory after build -- captures learnings  |
+| `/qa`        | **No**     | Quality is not optional                      |
+| `/security`  | **No**     | Security is not optional                     |
+| `/deploy`    | Yes        | User may want to deploy manually             |
 
-```text
-Factory guides you from idea to deployed product through these phases:
+Gate finality: once `/qa` or `/security` has run, no further code changes may land without
+re-running the affected gate. The `Tested commit` field must match HEAD for `/deploy` to
+proceed.
 
-  /ideation  → Brainstorm and explore ideas
-  /spec      → Turn idea into buildable specification
-  /prototype → Quick throwaway implementations for feedback
-  /setup     → Project scaffolding, CI/CD, infrastructure
-  /build     → Agent teams construct the product
-  /retro     → Team retrospective — mandatory after build
-  /qa        → Structured quality control
-  /security  → Security audit and hardening
-  /deploy    → Push to production
+## CLAUDE.md Generation
 
-Coming in v1.1:
-  /monitor   → Health monitoring and bug triage
+The orchestrator generates process rules for the project's `CLAUDE.md` using the template
+in `references/process-rules-template.md`. Content is written inside
+`<!-- factory:process-rules:start -->` / `<!-- factory:process-rules:end -->` markers.
+The `[project]` placeholder is replaced with the actual project name from state.
 
-You can run the full pipeline with /genesis, or use any skill independently.
-Current status: [phase] ([X of 9] phases complete)
-```
+## Claim Mode
 
-### State File Documentation
+Claim mode onboards existing codebases into the Factory pipeline. It reads the project,
+infers which phases are satisfied, writes `.factory/state.json`, and proposes a `CLAUDE.md`.
+Activates on `/genesis claim` or equivalent phrasing. If already claimed, warns before
+overwriting.
 
-The `.factory/state.json` file is human-readable by design. If a user opens it, they should
-understand their pipeline status without consulting docs.
+The claim protocol is defined in `references/claim-layers.md`, which contains:
 
-Every skill — whether invoked via the `/genesis` pipeline or standalone — reads and writes
-`.factory/state.json`. This means state is always up to date, even if the user runs
-`/build` or `/retro` directly without the orchestrator.
+- A five-layer deep-read protocol (Layer 1 Package Manifests through Layer 5 Project
+  Structure)
+- Confidence classification rules (high/medium/low)
+- Artifact-to-phase mapping table for state backfill
+- Steps 4-7: findings presentation, CLAUDE.md generation, feedback loop, and handoff
+
+## Settings Command
+
+The `/genesis settings` subcommand manages persistent user preferences stored in
+`.factory/settings.json`. Keys use dot notation (`skill.setting_name`). Four operations:
+
+- **list**: Display all settings grouped by skill.
+- **get `<key>`**: Show a single setting's value, default, and type.
+- **set `<key>` `<value>`**: Validate against schema and write.
+- **reset `<key>`**: Remove stored value, revert to schema default.
+
+## Error Handling
+
+- **Sub-skill fails**: Stay on current phase, diagnose, retry or ask the user.
+- **User rejects output**: Re-run with feedback. Do not advance.
+- **Unexpected state**: Present the problem clearly. Do not guess.
+- **Missing output files**: Detect and offer to re-run the producing phase.
+
+## Anti-Patterns
+
+- **Executing phase logic inline.** The orchestrator sequences phases -- it does not
+  implement them.
+- **Advancing past failed phases.** If a sub-skill fails, stay on that phase.
+- **Skipping output verification.** Confirm outputs before advancing.
+- **Overwriting existing artifacts without warning.** Always ask before re-running a phase
+  that would regenerate existing artifacts.
+- **Dumping full file contents at transitions.** Present 2-3 sentence summaries only.
+- **Silently resetting downstream phases.** Always warn before backward navigation.

@@ -14,9 +14,9 @@ The deploy skill operates across three environments in a promotion chain:
 
 | Environment | App Name | Deploy Command | Gates Required |
 |-------------|----------|----------------|----------------|
-| **Alpha** | `{app}-alpha` | `fly deploy --app {app}-alpha` | None (opt-in) |
-| **Staging** | `{app}-staging` | `fly deploy --app {app}-staging` | QA pass |
-| **Prod** | `{app}` | `fly deploy --app {app}` | QA pass + security clear |
+| **Alpha** | `{app}-alpha` | manifest `deploy_command` (alpha) | None (opt-in) |
+| **Staging** | `{app}-staging` | manifest `deploy_command` (staging) | QA pass |
+| **Prod** | `{app}` | manifest `deploy_command` (prod) | QA pass + security clear |
 
 - **Alpha** is for development validation. Agents may deploy here during
   `/build` without any gate checks. No smoke tests or health checks are
@@ -93,8 +93,10 @@ reason, then exit.
 #### 2a. Read Deployment Manifest
 
 Read `.factory/deploy-config.json`. This file is the source of truth for
-deployment configuration. If it does not exist, halt with an actionable error
-directing the user to run `/setup` or create the file manually.
+deployment configuration -- it tells you the platform, app names, deploy
+commands, health check paths, and URLs for each environment. If it does not
+exist, halt with an actionable error directing the user to run `/setup` or
+create the file manually.
 
 Extract from the manifest for the target environment: `app_name`,
 `deploy_command`, `url`, `region`, `health_check_path`, `rollback_command`,
@@ -118,7 +120,7 @@ Execute the deployment using values from the deployment manifest:
 - Monitor deployment progress
 - For staging and prod: wait for the platform's built-in health checks to pass
 - Use the `url` and `health_check_path` from the manifest for post-deploy
-  (the deployment command should be documented in `CLAUDE.md`)
+  verification (Step 4)
 
 ### Step 4: Post-Deploy Verification
 
@@ -177,59 +179,14 @@ alpha, tested by QA in staging, and cleared by security before going live.
 
 ## State Tracking
 
-Every skill must update `.factory/state.json` on invocation and completion,
-even when invoked standalone outside the `/genesis` orchestrator pipeline. If
-`.factory/state.json` does not exist, create it.
+State tracking uses the standard GLOBAL-REFERENCE.md template with
+`{PHASE_NAME}` = `deploy` and `{OUTPUT_FILES}` = `["DEPLOY-RECEIPT.md"]`. The skill also
+references the Gate Verification section.
 
-**On start** — set the deploy phase to `in_progress`:
+Additional state fields for this skill:
 
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "in_progress",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z"
-    }
-  }
-}
-```
-
-**On successful completion** — set the deploy phase to `completed`:
-
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "completed",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z",
-      "completed_at": "2026-04-03T14:12:00Z",
-      "outputs": ["DEPLOY-RECEIPT.md"]
-    }
-  }
-}
-```
-
-**On failure** — set the deploy phase to `failed`:
-
-```json
-{
-  "phases": {
-    "deploy": {
-      "status": "failed",
-      "target_environment": "prod",
-      "started_at": "2026-04-03T14:00:00Z",
-      "failed_at": "2026-04-03T14:08:00Z",
-      "failure_reason": "Health check returned 503 after deploy; rolled back to v42",
-      "outputs": ["DEPLOY-RECEIPT.md"]
-    }
-  }
-}
-```
-
-When updating an existing `state.json`, merge into the existing structure — do
-not overwrite other phases or top-level fields.
+- On start, also include: `"target_environment": "<alpha|staging|prod>"`
+- On failure, also include: `"outputs": ["DEPLOY-RECEIPT.md"]` (receipt is always produced)
 
 ## Rollback
 
@@ -239,9 +196,8 @@ Rollback behavior depends on the target environment:
 
 If any post-deploy health check or smoke test fails on prod:
 
-1. **Immediately roll back** — run `fly releases rollback --app {app}` (or the
-   equivalent for the configured platform). Do not wait for manual
-   intervention.
+1. **Immediately roll back** — run the `rollback_command` from the deployment
+   manifest for the target environment. Do not wait for manual intervention.
 2. **Verify rollback** — hit the health check endpoint again to confirm the
    previous version is serving.
 3. **Record in receipt** — set `DEPLOY-RECEIPT.md` status to `ROLLED BACK` with
@@ -260,8 +216,8 @@ If post-deploy verification fails on staging:
 
 1. **Record the failure** in `DEPLOY-RECEIPT.md` with `status: FAILED` and
    diagnostic details.
-2. **Notify the user** with the failure details and the rollback command:
-   `fly releases rollback --app {app}-staging`.
+2. **Notify the user** with the failure details and the rollback command from
+   the manifest (`rollback_command` for the staging environment).
 3. **Do not auto-rollback** — staging failures are not user-facing, so the user
    decides whether to roll back or investigate further.
 
