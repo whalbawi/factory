@@ -1,1 +1,3 @@
-.factory/
+.factory/*
+!.factory/deploy-config.json
+!.factory/state-schema.json
