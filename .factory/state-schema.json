@@ -1,0 +1,430 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/whalbawi/factory/raw/main/.factory/state-schema.json",
+  "title": "Factory Pipeline State",
+  "description": "Schema for .factory/state.json -- the shared pipeline state file read and written by every Factory skill.",
+  "type": "object",
+  "required": ["pipeline", "project_name", "started_at", "current_phase"],
+  "additionalProperties": false,
+  "properties": {
+    "pipeline": {
+      "type": "string",
+      "const": "factory",
+      "description": "Always 'factory'."
+    },
+    "project_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the project being built."
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the pipeline began."
+    },
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "ideation",
+        "spec",
+        "prototype",
+        "setup",
+        "build",
+        "retro",
+        "qa",
+        "security",
+        "deploy",
+        "genesis",
+        "bugfix"
+      ],
+      "description": "The currently active phase, or 'idle' when no phase is running."
+    },
+    "phases": {
+      "type": "object",
+      "description": "Map of phase names to their state. Each phase tracks status, timestamps, and outputs.",
+      "additionalProperties": false,
+      "properties": {
+        "ideation": { "$ref": "#/$defs/phase" },
+        "spec": { "$ref": "#/$defs/phase" },
+        "prototype": { "$ref": "#/$defs/phase" },
+        "setup": { "$ref": "#/$defs/phase" },
+        "build": { "$ref": "#/$defs/buildPhase" },
+        "retro": { "$ref": "#/$defs/phase" },
+        "qa": { "$ref": "#/$defs/phase" },
+        "security": { "$ref": "#/$defs/phase" },
+        "deploy": { "$ref": "#/$defs/deployPhase" },
+        "genesis": { "$ref": "#/$defs/phase" }
+      }
+    },
+    "bugfixes": {
+      "type": "array",
+      "description": "Independent bugfix pipelines, separate from the main phases.",
+      "items": { "$ref": "#/$defs/bugfix" }
+    },
+    "resets": {
+      "type": "array",
+      "description": "Audit trail of backward navigation jumps.",
+      "items": { "$ref": "#/$defs/reset" }
+    },
+    "claimed": {
+      "type": "boolean",
+      "description": "Whether claim mode completed successfully."
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when claim finished."
+    },
+    "claim_confidence": {
+      "$ref": "#/$defs/claimConfidence"
+    }
+  },
+  "$defs": {
+    "phaseStatus": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "completed", "failed", "skipped", "partial"]
+    },
+    "phase": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "$ref": "#/$defs/phaseStatus" },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_reason": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "skip_reason": {
+          "type": "string"
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Confidence level assigned during claim mode."
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Explanations of what was detected during claim mode."
+        }
+      }
+    },
+    "buildPhase": {
+      "description": "The build phase, which may include sprint tracking.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "$ref": "#/$defs/phaseStatus" },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_reason": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "skip_reason": {
+          "type": "string"
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sprints": { "$ref": "#/$defs/sprints" }
+      }
+    },
+    "deployPhase": {
+      "description": "The deploy phase, which may include a target environment.",
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "$ref": "#/$defs/phaseStatus" },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_reason": {
+          "type": "string"
+        },
+        "skipped": {
+          "type": "boolean"
+        },
+        "skip_reason": {
+          "type": "string"
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "findings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "target_environment": {
+          "type": "string",
+          "description": "Deployment target: alpha, staging, or prod."
+        }
+      }
+    },
+    "sprints": {
+      "type": "object",
+      "description": "Sprint-level tracking nested under the build phase.",
+      "required": ["total", "current"],
+      "additionalProperties": false,
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total number of sprints in the plan."
+        },
+        "current": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The sprint currently being executed."
+        },
+        "completed": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/completedSprint" }
+        },
+        "overrides": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sprintOverride" }
+        }
+      }
+    },
+    "completedSprint": {
+      "type": "object",
+      "required": ["number", "started_at", "completed_at", "tasks_merged"],
+      "additionalProperties": false,
+      "properties": {
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tasks_merged": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pre_sprint_commit": {
+          "type": "string",
+          "description": "Git SHA before the sprint started."
+        },
+        "post_sprint_commit": {
+          "type": "string",
+          "description": "Git SHA after the sprint completed."
+        },
+        "checkpoint": { "$ref": "#/$defs/sprintCheckpoint" }
+      }
+    },
+    "sprintCheckpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "qa": { "$ref": "#/$defs/checkpointResult" },
+        "security": { "$ref": "#/$defs/checkpointResult" }
+      }
+    },
+    "checkpointResult": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["passed", "failed", "clear", "blocked", "skipped"]
+        },
+        "report": {
+          "type": ["string", "null"],
+          "description": "Path to the checkpoint report file, or null if none produced."
+        }
+      }
+    },
+    "sprintOverride": {
+      "type": "object",
+      "required": ["sprint", "gate", "reason", "timestamp"],
+      "additionalProperties": false,
+      "properties": {
+        "sprint": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "gate": {
+          "type": "string",
+          "enum": ["qa", "security"]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "bugfix": {
+      "type": "object",
+      "required": ["id", "status", "started_at", "symptom", "severity", "size", "triage_doc", "phases"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Zero-padded sequential ID (e.g., '001')."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["in_progress", "completed", "failed", "escalated", "abandoned", "not_an_issue"]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "symptom": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["P0", "P1", "P2"]
+        },
+        "size": {
+          "type": "string",
+          "enum": ["S", "M", "L"]
+        },
+        "triage_doc": {
+          "type": "string",
+          "description": "Path to the BUGFIX-{id}.md triage document."
+        },
+        "phases": {
+          "type": "object",
+          "description": "Sub-phases of the bugfix pipeline.",
+          "additionalProperties": false,
+          "properties": {
+            "triage": { "$ref": "#/$defs/bugfixSubPhase" },
+            "build": { "$ref": "#/$defs/bugfixSubPhase" },
+            "qa": { "$ref": "#/$defs/bugfixSubPhase" },
+            "security": { "$ref": "#/$defs/bugfixSubPhase" },
+            "deploy": { "$ref": "#/$defs/bugfixSubPhase" }
+          }
+        }
+      }
+    },
+    "bugfixSubPhase": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "failed"]
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "failure_reason": {
+          "type": "string"
+        }
+      }
+    },
+    "reset": {
+      "type": "object",
+      "required": ["timestamp", "from_phase", "to_phase", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "from_phase": {
+          "type": "string"
+        },
+        "to_phase": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "claimConfidence": {
+      "type": "object",
+      "description": "Count of findings at each confidence level from claim mode.",
+      "additionalProperties": false,
+      "properties": {
+        "high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
